@@ -5,9 +5,9 @@ A bunch of functions tailored to display a variety of Stream objects.
 
 __name__ = "Display"
 __author__ = "Rafael Pastrana"
-__version__ = "0.0.1"
-__creation__ = "2018.08.01"
-__date__ = "2018.08.01"
+__version__ = "0.0.4"
+__creation__ = "2018.11.12"
+__date__ = "2018.11.12"
 
 
 import compas
@@ -37,12 +37,12 @@ class Display():
         data = s_mesh.get_data_on_nodes(data_tag, mode)
 
         rs_points = []
-        for v in s_mesh.cMesh.vertices():
-            rs_points.append(s_mesh.cMesh.vertex_coordinates(v))
+        for v in s_mesh.c_mesh.vertices():
+            rs_points.append(s_mesh.c_mesh.vertex_coordinates(v))
 
         faces = []
-        for idx, f in enumerate(s_mesh.cMesh.faces()):
-            f_vts = s_mesh.cMesh.face_vertices(f)
+        for idx, f in enumerate(s_mesh.c_mesh.faces()):
+            f_vts = s_mesh.c_mesh.face_vertices(f)
             if idx == 0:
                 print('initial indices are: {}'.format(f_vts))
 
@@ -81,13 +81,13 @@ class Display():
         return rs_lines
 
     def draw_face_vectors(self, s_mesh, name, scale=0.02):
-        cts = [s_mesh.cMesh.face_centroid(f) for f in s_mesh.cMesh.faces()]
-        vectors_a = s_mesh.cMesh.get_faces_attribute(str(name) + '_a')
-        vectors_b = s_mesh.cMesh.get_faces_attribute(str(name) + '_b')
+        cts = [s_mesh.c_mesh.face_centroid(f) for f in s_mesh.c_mesh.faces()]
+        vectors_a = s_mesh.c_mesh.get_faces_attribute(str(name) + '_a')
+        vectors_b = s_mesh.c_mesh.get_faces_attribute(str(name) + '_b')
         return self.draw_vectors(cts, zip(vectors_a, vectors_b), scale)
 
     def draw_node_vectors(self, s_mesh, name, scale=0.02):
-        vts = [s_mesh.cMesh.vertex_coordinates(v) for v in s_mesh.cMesh.vertices()]
-        vectors_a = s_mesh.cMesh.get_vertices_attribute(str(name) + '_a')
-        vectors_b = s_mesh.cMesh.get_vertices_attribute(str(name) + '_b')
+        vts = [s_mesh.c_mesh.vertex_coordinates(v) for v in s_mesh.c_mesh.vertices()]
+        vectors_a = s_mesh.c_mesh.get_vertices_attribute(str(name) + '_a')
+        vectors_b = s_mesh.c_mesh.get_vertices_attribute(str(name) + '_b')
         return self.draw_vectors(vts, zip(vectors_a, vectors_b), scale)

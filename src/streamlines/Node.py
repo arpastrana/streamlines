@@ -5,13 +5,13 @@ A node class with boid temperament.
 
 __name__ = "Node"
 __author__ = "Rafael Pastrana"
-__version__ = "0.0.5"
-__creation__ = "2018.07.29"
-__date__ = "2018.08.01"
+__version__ = "0.0.4"
+__creation__ = "2018.11.12"
+__date__ = "2018.11.12"
 
 import sys
 import imp
-import Boid
+import boid
 import compas
 import compas.geometry as cg
 import compas_rhino
@@ -19,9 +19,9 @@ import math
 import rhinoscriptsyntax as rs
 import Rhino.Geometry as rg
 
-imp.reload(Boid)
+imp.reload(boid)
 
-from Boid import Boid
+from boid import Boid
 from compas.datastructures import Mesh
 from compas.geometry import Point
 from compas.geometry import Line
@@ -93,15 +93,15 @@ class Node(Boid):
         self.is_intersection = node.is_intersection
 
     def pull_to_edge(self, s_mesh, f_id):
-        for u, v in s_mesh.cMesh.face_halfedges(f_id):
-            line = s_mesh.cMesh.edge_coordinates(u, v)
+        for u, v in s_mesh.c_mesh.face_halfedges(f_id):
+            line = s_mesh.c_mesh.edge_coordinates(u, v)
 
             if cg.distance_point_point(line[0], line[1]) > TOL:
                 if cg.distance_point_line(self.pos, line) < TOL:
                     return (u, v)
         return None
 
-    def find_neighbours(self, cMesh, objs, rings=1, pos=True):
+    def find_neighbours(self, c_mesh, objs, rings=1, pos=True):
         count = 0
         f_keys = set()
         f_keys.add(self.f_id)
@@ -109,7 +109,7 @@ class Node(Boid):
         while count < rings:
             temp_f_keys = []
             for f_key in f_keys:
-                temp_f_keys.extend(cMesh.face_neighbours(f_key))
+                temp_f_keys.extend(c_mesh.face_neighbours(f_key))
 
             f_keys.update(temp_f_keys)
             count += 1
@@ -126,14 +126,14 @@ class Node(Boid):
     def find_dijkstra_neighbours(self, s_mesh, objs, length, pos=True):
         f_keys = set()
         v_keys = set()
-        vertices = s_mesh.cMesh.face_vertices(self.f_id)
+        vertices = s_mesh.c_mesh.face_vertices(self.f_id)
 
-        for v in s_mesh.cMesh.face_vertices(self.f_id):
-            dst = s_mesh.cMesh.get_vertex_attribute(v, 'dijkstra')
+        for v in s_mesh.c_mesh.face_vertices(self.f_id):
+            dst = s_mesh.c_mesh.get_vertex_attribute(v, 'dijkstra')
             v_keys.update([v_key for v_key, d in dst.items() if d <= length])
 
         for v_key in v_keys:
-            f_keys.update(s_mesh.cMesh.vertex_faces(v_key))
+            f_keys.update(s_mesh.c_mesh.vertex_faces(v_key))
 
         n_objs = [obj.pos for obj in objs if obj.f_id in f_keys]
 

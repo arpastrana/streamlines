@@ -5,9 +5,9 @@ A boid object that seeks, aligns, coheres and separates.
 
 __name__ = "Boid"
 __author__ = "Rafael Pastrana"
-__version__ = "0.0.1"
-__creation__ = "2018.07.29"
-__date__ = "2018.07.29"
+__version__ = "0.0.4"
+__creation__ = "2018.11.12"
+__date__ = "2018.11.12"
 
 import sys
 import imp
@@ -17,16 +17,16 @@ import compas_rhino
 import math
 import rhinoscriptsyntax as rs
 import Rhino.Geometry as rg
-import Utilities
+import utilities
 
 from compas.datastructures import Mesh
 from compas.geometry import Point
 from compas.geometry import Line
 from compas.geometry import subtract_vectors
 
-imp.reload(Utilities)
+imp.reload(utilities)
 
-from Utilities import Utilities
+from utilities import Utilities
 ut = Utilities()
 
 

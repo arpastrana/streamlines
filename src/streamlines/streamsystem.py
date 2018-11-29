@@ -5,9 +5,9 @@ A compas implementation of a streamline system.
 
 __name__ = "Streamsystem"
 __author__ = "Rafael Pastrana"
-__version__ = "0.0.3"
-__creation__ = "2018.09.08"
-__date__ = "2018.09.08"
+__version__ = "0.0.4"
+__creation__ = "2018.11.12"
+__date__ = "2018.11.12"
 
 
 import sys
@@ -21,22 +21,22 @@ import rhinoscriptsyntax as rs
 import Rhino.Geometry as rg
 import time
 
-import Node
-import Streamline
-import Utilities
+import node
+import streamline
+import utilities
 
 from compas.datastructures import Mesh
 from compas.geometry import KDTree
 from compas.geometry import Polyline
 
-imp.reload(Node)
-imp.reload(Streamline)
-imp.reload(Utilities)
+imp.reload(node)
+imp.reload(streamline)
+imp.reload(utilities)
 
-from Node import Node
-from Streamline import Streamline
+from node import Node
+from streamline import Streamline
 from System import DateTime
-from Utilities import Utilities
+from utilities import Utilities
 
 
 ut = Utilities()
@@ -45,14 +45,14 @@ ut = Utilities()
 class Streamsystem():
 
     def __init__(self,
-                 sMesh,
+                 s_mesh,
                  as_tag,
                  dL=0.02,
                  min_sp=0.05,
                  uni_sp=False
                  ):
 
-        self.sMesh = sMesh
+        self.s_mesh = s_mesh
         self.dL = dL
         self.min_sp = min_sp
         self.uni_sp = uni_sp
@@ -91,7 +91,7 @@ class Streamsystem():
     def get_new_streamline(self, point, o_prox=1.0, st_o_prox=0.8, s_prox=4.0):
         seed_node = self.make_new_node(point)
         sep = self.get_threshold_distance(seed_node) * st_o_prox
-        invalid = self.get_neighbour_proximity(seed_node.pos, sep)
+        invalid = self.get_neighbor_proximity(seed_node.pos, sep)
 
         if invalid is False:
             new_streamline = self.make_streamline(seed_node, o_prox, s_prox)
@@ -247,7 +247,7 @@ class Streamsystem():
 
                     tree = KDTree(others)
 
-                    # find neighbours
+                    # find neighbors
                     for sep, node in value:
                     # find tangent vector
                         vec = self.get_offset_vector(node)
@@ -270,11 +270,11 @@ class Streamsystem():
                         # print('number of intersections is {}'.format(len(ints)))
                         # print('segment tree created!')
 
-                    # find neighbours
-                        nbrs = tree.nearest_neighbours(node.pos, 8, True)
-                        nbrs = seg_tree.nearest_neighbours(node.pos, 4, True)
+                    # find neighbors
+                        nbrs = tree.nearest_neighbors(node.pos, 8, True)
+                        nbrs = seg_tree.nearest_neighbors(node.pos, 4, True)
 
-                    # split neighbours to the right or to the left
+                    # split neighbors to the right or to the left
                         nbrs_right = []
                         for nbr in nbrs:
                             if nbr[0] is not None:
@@ -296,7 +296,7 @@ class Streamsystem():
 
                             rs_pts = list(map(lambda x: rs.AddPoint(*x), pts))
                             rs_crv = rs.AddPolyline(rs_pts)
-                            rs_crv = rs.PullCurveToMesh(self.sMesh.ghMesh, rs_crv)
+                            rs_crv = rs.PullCurveToMesh(self.s_mesh.ghMesh, rs_crv)
                             length = rs.CurveLength(rs_crv) * s_factor
                             self.links_right.append(rs_crv)
 
@@ -305,8 +305,8 @@ class Streamsystem():
                             mid_node = self.make_new_node(midpoint)
                             new_nodes.append(mid_node)
 
-                            sep_right = self.sMesh.cMesh.get_face_attribute(node_right.f_id, self.s_tag)
-                            sep_mid = self.sMesh.cMesh.get_face_attribute(mid_node.f_id, self.s_tag)
+                            sep_right = self.s_mesh.c_mesh.get_face_attribute(node_right.f_id, self.s_tag)
+                            sep_mid = self.s_mesh.c_mesh.get_face_attribute(mid_node.f_id, self.s_tag)
                             seps = [sep, sep_right, sep_mid]
 
                             if length > min(seps):
@@ -392,7 +392,7 @@ class Streamsystem():
             if vtag is None:
                 vec = nd.vel
             else:
-                vec = self.sMesh.get_vector_on_face(nd.pos, nd.f_id, vtag, nd.vel)
+                vec = self.s_mesh.get_vector_on_face(nd.pos, nd.f_id, vtag, nd.vel)
                 vec = ut.align_vector(cg.normalize_vector(vec), nd.vel)
 
             # 5. project vector to face plane and create new point
@@ -445,7 +445,7 @@ class Streamsystem():
     def get_threshold_distance(self, node):
         d = self.min_sp
         if self.uni_sp is False:
-            d = self.sMesh.cMesh.get_face_attribute(node.f_id, self.s_tag)
+            d = self.s_mesh.c_mesh.get_face_attribute(node.f_id, self.s_tag)
         return d
 
     def check_proximity(self, streamline, node, max_dist, other_prox, ds_self):
@@ -456,7 +456,7 @@ class Streamsystem():
         # elif streamline.is_point_close(node.pos, ds_self, 3) is True:
         #     print('too close to itself')
         #     return False
-        # o_nbrs = node.find_neighbours(self.sMesh.cMesh, streamline.nd_search)
+        # o_nbrs = node.find_neighbors(self.s_mesh.c_mesh, streamline.nd_search)
         # if o_nbrs:
         #     if ut.delaunay_is_point_close(node.pos, o_nbrs, ds_self) is True:
         #         print('threshold to itself: {}'.format(max_dist * other_prox))
@@ -477,7 +477,7 @@ class Streamsystem():
         return True
 
     def is_point_close(self, point, distance, exclude=None):
-        nnbr, label, dst = self.tree.nearest_neighbour(point, exclude)
+        nnbr, label, dst = self.tree.nearest_neighbor(point, exclude)
         if dst is not None:
             if dst < distance:
                 print('Distance to KDTree is {}'.format(dst))
@@ -488,9 +488,9 @@ class Streamsystem():
         self.tree = KDTree([nd.pos for nd in self.objs])
 
     def project_vector_on_mesh(self, node, vector, length):
-        plane = self.sMesh.cMesh.get_face_attribute(node.f_id, 'plane')
-        temp = cg.translate_points([node.pos], cg.scale_vector(vector, 1))[0]
-        proj = cg.project_point_plane(temp, plane)
+        plane = self.s_mesh.c_mesh.get_face_attribute(node.f_id, 'plane')
+        temp = cg.translate_points([node.pos], cg.scale_vector(vector, 1))
+        proj = cg.project_points_plane(temp, plane)[0]
         proj = cg.normalize_vector(cg.vector_from_points(node.pos, proj))
         return cg.scale_vector(proj, length)
 
@@ -511,7 +511,7 @@ class Streamsystem():
 
             # find new face index
             new_faces = list(filter(lambda x: x != node.f_id,
-                                    self.sMesh.cMesh.edge_faces(u, v)
+                                    self.s_mesh.c_mesh.edge_faces(u, v)
                                     )
                              )
             # test against found faces
@@ -535,7 +535,7 @@ class Streamsystem():
                 return new_node, True, True
 
         else:
-            tpt, tid = self.sMesh.closest_point(new_node.pos)
+            tpt, tid = self.s_mesh.closest_point(new_node.pos)
             dst = cg.distance_point_point(tpt, new_node.pos)
 
             if dst < pr:  # it is on a mesh face, but no edge intersection
@@ -559,7 +559,7 @@ class Streamsystem():
                 return None, False, False
 
     def get_edge_intersections(self, node, other_node):
-        face_edges = self.sMesh.cMesh.face_halfedges(node.f_id)
+        face_edges = self.s_mesh.c_mesh.face_halfedges(node.f_id)
         line = [node.pos, other_node.pos]
         ints = self.find_edge_intersections(line, face_edges, other_node)
         return ints
@@ -570,7 +570,7 @@ class Streamsystem():
         intersections = []
 
         for u, v in edges:
-            plane = self.sMesh.cMesh.get_edge_attribute((u, v), 'plane')
+            plane = self.s_mesh.c_mesh.get_edge_attribute((u, v), 'plane')
             compas_int = cg.intersection_segment_plane(line, plane)
 
             if compas_int is not None:
@@ -595,7 +595,7 @@ class Streamsystem():
     def make_new_node(self, point, velocity=None):
         new_node = Node()
         new_node.update_pos(point)
-        new_node.pull_to_mesh(self.sMesh, self.v_tag)
+        new_node.pull_to_mesh(self.s_mesh, self.v_tag)
 
         if velocity is not None:
             new_node.update_vel(velocity)
@@ -613,7 +613,7 @@ class Streamsystem():
 
             for idx, point in enumerate(samp_pts):
                 s_nd = self.make_new_node(point, samp_vels[idx])
-                s = self.sMesh.cMesh.get_face_attribute(s_nd.f_id, self.s_tag)
+                s = self.s_mesh.c_mesh.get_face_attribute(s_nd.f_id, self.s_tag)
 
                 if s <= threshold_sp:
                     if heap is True:
@@ -629,7 +629,7 @@ class Streamsystem():
 
     def get_offset_vector(self, node):
         self.seed_pts.append(rs.AddPoint(*node.pos))
-        normal = self.sMesh.cMesh.face_normal(node.f_id)
+        normal = self.s_mesh.c_mesh.face_normal(node.f_id)
         return cg.normalize_vector(cg.cross_vectors(node.vel, normal))
 
     def get_offset_point(self, node, offset, reverse=False):
@@ -653,9 +653,9 @@ class Streamsystem():
             self.offsets.append(offset_streamline)
         return offset_point
 
-    def get_neighbour_proximity(self, point, distance, exclude=None):
+    def get_neighbor_proximity(self, point, distance, exclude=None):
         self.update_search_tree()
-        nnbr, label, dst = self.tree.nearest_neighbour(point, exclude)
+        nnbr, label, dst = self.tree.nearest_neighbor(point, exclude)
         if dst is not None:
             if dst < distance:
                 print('Distance at start to KDTree is {}'.format(dst))
@@ -663,20 +663,20 @@ class Streamsystem():
         return False
 
     def get_max_face_centroid(self):
-        f_keys = [f for f in self.sMesh.cMesh.faces()]
-        sep = self.sMesh.cMesh.get_faces_attribute(self.s_tag, fkeys=f_keys)
+        f_keys = [f for f in self.s_mesh.c_mesh.faces()]
+        sep = self.s_mesh.c_mesh.get_faces_attribute(name=self.s_tag, keys=f_keys)
         min_1 = min(zip(sep, f_keys), key=lambda x: x[0])[1]
 
-        min_nbrs = self.sMesh.cMesh.face_neighbours(min_1)
-        sep_nbrs = self.sMesh.cMesh.get_faces_attribute(self.s_tag, fkeys=min_nbrs)
+        min_nbrs = self.s_mesh.c_mesh.face_neighbors(min_1)
+        sep_nbrs = self.s_mesh.c_mesh.get_faces_attribute(name=self.s_tag, keys=min_nbrs)
         min_2 = min(zip(sep_nbrs, min_nbrs), key=lambda x: x[0])[1]
 
-        min_1 = self.sMesh.cMesh.face_centroid(min_1)
-        min_2 = self.sMesh.cMesh.face_centroid(min_2)
+        min_1 = self.s_mesh.c_mesh.face_centroid(min_1)
+        min_2 = self.s_mesh.c_mesh.face_centroid(min_2)
 
         return cg.Line(min_1, min_2).midpoint
 
     def get_max_face_spacing(self):
-        f_keys = [f for f in self.sMesh.cMesh.faces()]
-        sep = self.sMesh.cMesh.get_faces_attribute(self.s_tag, fkeys=f_keys)
+        f_keys = [f for f in self.s_mesh.c_mesh.faces()]
+        sep = self.s_mesh.c_mesh.get_faces_attribute(name=self.s_tag, keys=f_keys)
         return max(sep)

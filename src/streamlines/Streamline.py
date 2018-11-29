@@ -5,16 +5,15 @@ A wrapper for a bunch of nodes with boid temperament.
 
 __name__ = "Streamline"
 __author__ = "Rafael Pastrana"
-__version__ = "0.0.2"
-__creation__ = "2018.08.05"
-__date__ = "2018.08.05"
+__version__ = "0.0.4"
+__creation__ = "2018.11.12"
+__date__ = "2018.11.12"
 
 
 import compas
 import compas_rhino
 import math
-import Node
-import Streamline
+import node
 import rhinoscriptsyntax as rs
 import Rhino.Geometry as rg
 
