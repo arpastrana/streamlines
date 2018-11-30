@@ -1,5 +1,5 @@
 '''
-A boid object that seeks, aligns, coheres and separates.
+A boid object that seeks, aligns, coheres, and separates.
 '''
 
 
