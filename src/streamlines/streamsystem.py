@@ -10,22 +10,15 @@ __creation__ = "2018.11.12"
 __date__ = "2018.11.12"
 
 
-import sys
 import imp
-import compas
-import compas_rhino
 import heapq
-import math
 import compas.geometry as cg
 import rhinoscriptsyntax as rs
-import Rhino.Geometry as rg
-import time
 
 import node
 import streamline
 import utilities
 
-from compas.datastructures import Mesh
 from compas.geometry import KDTree
 from compas.geometry import Polyline
 
@@ -35,14 +28,13 @@ imp.reload(utilities)
 
 from node import Node
 from streamline import Streamline
-from System import DateTime
 from utilities import Utilities
 
 
 ut = Utilities()
 
 
-class Streamsystem():
+class Streamsystem:
 
     def __init__(self,
                  s_mesh,
@@ -203,8 +195,6 @@ class Streamsystem():
         print('Number of Processed Nodes was: {}'.format(node_count))
 
     def make_streamlines_fungi(self, le, s_factor, iterations):
-        count = 0
-        node_count = 0
         min_sp = self.get_max_face_spacing() * 1.0
         print('******* work starts *********')
 
@@ -231,7 +221,7 @@ class Streamsystem():
                     others = []
 
                     other_streamlines = [v for k, v in my_dict.items() if k != key]
-                    ref = self.get_offset_vector(value[0][1])
+                    # ref = self.get_offset_vector(value[0][1])
 
                     # make search tree
                     for other_nodes in other_streamlines:
@@ -248,14 +238,14 @@ class Streamsystem():
                     tree = KDTree(others)
 
                     # find neighbors
-                    for sep, node in value:
-                    # find tangent vector
-                        vec = self.get_offset_vector(node)
-                        #vec = cg.scale_vector(vec, -1.)
+                    for sep, nd in value:
+                        # find tangent vector
+                        vec = self.get_offset_vector(nd)
+                        # vec = cg.scale_vector(vec, -1.)
                         # vec = ut.align_vector(vec, ref)
 
                     # find segment plane intersections
-                        pl = (node.pos, node.vel)
+                        pl = (nd.pos, nd.vel)
                         ints = []
                         for seg in other_segs:
                             if seg is not None:
@@ -271,14 +261,14 @@ class Streamsystem():
                         # print('segment tree created!')
 
                     # find neighbors
-                        nbrs = tree.nearest_neighbors(node.pos, 8, True)
-                        nbrs = seg_tree.nearest_neighbors(node.pos, 4, True)
+                        nbrs = tree.nearest_neighbors(nd.pos, 8, True)
+                        nbrs = seg_tree.nearest_neighbors(nd.pos, 4, True)
 
                     # split neighbors to the right or to the left
                         nbrs_right = []
                         for nbr in nbrs:
                             if nbr[0] is not None:
-                                nbr_vec = cg.Vector.from_start_end(node.pos, nbr[0])
+                                nbr_vec = cg.Vector.from_start_end(nd.pos, nbr[0])
                                 if cg.dot_vectors(vec, nbr_vec) > 0:
                                     nbrs_right.append((nbr[0], nbr[2]))
 
@@ -292,7 +282,7 @@ class Streamsystem():
                         if pt_right is not None:
 
                             node_right = self.make_new_node(pt_right)
-                            pts = [node.pos, pt_right]
+                            pts = [nd.pos, pt_right]
 
                             rs_pts = list(map(lambda x: rs.AddPoint(*x), pts))
                             rs_crv = rs.AddPolyline(rs_pts)
@@ -312,7 +302,7 @@ class Streamsystem():
                             if length > min(seps):
                                 flag = True
                             elif length <= min(seps):
-                                flag = False # False
+                                flag = False  # False
                             flags.append(flag)
 
                     # after iterating over all streamline nodes
@@ -331,7 +321,7 @@ class Streamsystem():
 
             streamlines.extend(new_streamlines)
 
-        #print('num of output streamlines is {}'.format(len(streamlines)))
+        # print('num of output streamlines is {}'.format(len(streamlines)))
         self.streamlines[:] = []
         self.streamlines = [st for st in streamlines]
         # print('num of output attr streamlines is {}'.format(len(self.streamlines)))
@@ -383,8 +373,8 @@ class Streamsystem():
                     break
 
             # 3b. temporary for simmetry:  # temporary
-            alpha = 0.0
-            if nd.x > alpha:
+            alpha = 0.01
+            if nd.x >= alpha:
                 # print('larger than {}'.format(alpha))
                 break
 
@@ -396,7 +386,7 @@ class Streamsystem():
                 vec = ut.align_vector(cg.normalize_vector(vec), nd.vel)
 
             # 5. project vector to face plane and create new point
-            vec = self.project_vector_on_mesh(nd, vec, dL)
+            vec = self.project_vector_on_mesh(nd, vec, proj_dist)
             new_pos = cg.translate_points([nd.pos], vec)[0]
 
             # 6. create new displace node
@@ -453,9 +443,10 @@ class Streamsystem():
             print('too close to others')
             return False
 
-        # elif streamline.is_point_close(node.pos, ds_self, 3) is True:
-        #     print('too close to itself')
-        #     return False
+        elif streamline.is_point_close(node.pos, ds_self, 5) is True:
+            print('too close to itself')
+            return False
+
         # o_nbrs = node.find_neighbors(self.s_mesh.c_mesh, streamline.nd_search)
         # if o_nbrs:
         #     if ut.delaunay_is_point_close(node.pos, o_nbrs, ds_self) is True:

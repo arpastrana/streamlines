@@ -75,10 +75,10 @@ class Streamline():
     def is_point_close(self, point, distance, n):
         exclude = set()
         for i in range(n):
-            nnbr = self.tree.nearest_neighbour(point, exclude)
+            nnbr = self.tree.nearest_neighbor(point, exclude)
             exclude.add(nnbr[1])
 
-        nnbr, label, dst = self.tree.nearest_neighbour(point, exclude)
+        nnbr, label, dst = self.tree.nearest_neighbor(point, exclude)
         if dst is not None:
             if dst < distance:
                 return True

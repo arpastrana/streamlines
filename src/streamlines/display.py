@@ -10,16 +10,12 @@ __creation__ = "2018.11.12"
 __date__ = "2018.11.12"
 
 
-import compas
-import compas_rhino
 import imp
-import Rhino.Geometry as rg
 import rhinoscriptsyntax as rs
 import Utilities
 
 imp.reload(Utilities)
 
-from compas.datastructures import Mesh
 from compas import geometry as cg
 from Utilities import Utilities
 
@@ -82,8 +78,8 @@ class Display():
 
     def draw_face_vectors(self, s_mesh, name, scale=0.02):
         cts = [s_mesh.c_mesh.face_centroid(f) for f in s_mesh.c_mesh.faces()]
-        vectors_a = s_mesh.c_mesh.get_faces_attribute(str(name) + '_a')
-        vectors_b = s_mesh.c_mesh.get_faces_attribute(str(name) + '_b')
+        vectors_a = s_mesh.c_mesh.get_faces_attribute(s_mesh.c_mesh.faces(), str(name) + '_a')
+        vectors_b = s_mesh.c_mesh.get_faces_attribute(s_mesh.c_mesh.faces(), str(name) + '_b')
         return self.draw_vectors(cts, zip(vectors_a, vectors_b), scale)
 
     def draw_node_vectors(self, s_mesh, name, scale=0.02):

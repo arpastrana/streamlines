@@ -101,7 +101,7 @@ class Node(Boid):
                     return (u, v)
         return None
 
-    def find_neighbours(self, c_mesh, objs, rings=1, pos=True):
+    def find_neighbors(self, c_mesh, objs, rings=1, pos=True):
         count = 0
         f_keys = set()
         f_keys.add(self.f_id)
@@ -109,7 +109,7 @@ class Node(Boid):
         while count < rings:
             temp_f_keys = []
             for f_key in f_keys:
-                temp_f_keys.extend(c_mesh.face_neighbours(f_key))
+                temp_f_keys.extend(c_mesh.face_neighbors(f_key))
 
             f_keys.update(temp_f_keys)
             count += 1
@@ -123,7 +123,7 @@ class Node(Boid):
         else:
             return None
 
-    def find_dijkstra_neighbours(self, s_mesh, objs, length, pos=True):
+    def find_dijkstra_neighbors(self, s_mesh, objs, length, pos=True):
         f_keys = set()
         v_keys = set()
         vertices = s_mesh.c_mesh.face_vertices(self.f_id)
