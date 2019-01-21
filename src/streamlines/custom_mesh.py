@@ -209,6 +209,32 @@ class StructuralMesh():
 
         return reduce(lambda x, y: cg.add_vectors(x, y), new_vectors)
 
+    def get_vector_on_face_faces(self, point, f_key, name, vec=[0, 0, 0]):
+        pt_cloud = []
+
+        f_keys = [f_key]
+        f_keys.extend(self.c_mesh.face_neighbors(f_key))
+        f_keys = list(set(f_keys))
+
+        f_vectors_a = self.c_mesh.get_faces_attribute(f_keys,
+                                                      str(name) + '_a'
+                                                      )
+        f_vectors_b = self.c_mesh.get_faces_attribute(f_keys,
+                                                      str(name) + '_b',
+                                                      )
+        f_vectors = ut.filter_aligned_vectors(vec, f_vectors_a, f_vectors_b)
+
+        for f_key in f_keys:
+            pt_cloud.append(self.c_mesh.face_centroid(f_key))
+
+        weights = ut.get_dist_weights(point, pt_cloud)
+        new_vectors = []
+        for idx, vec in enumerate(f_vectors):
+            new_vector = cg.scale_vector(vec, weights[idx])
+            new_vectors.append(new_vector)
+
+        return reduce(lambda x, y: cg.add_vectors(x, y), new_vectors)
+
     def get_data_on_nodes(self, data_tag, mode='max'):
         n_data = []
 

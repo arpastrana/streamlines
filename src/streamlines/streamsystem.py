@@ -373,8 +373,8 @@ class Streamsystem:
                     break
 
             # 3b. temporary for simmetry:  # temporary
-            alpha = 0.01
-            if nd.x >= alpha:
+            alpha = 0.00
+            if nd.x <= alpha or nd.y >= alpha:
                 # print('larger than {}'.format(alpha))
                 break
 
