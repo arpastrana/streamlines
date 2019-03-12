@@ -19,7 +19,7 @@ import rhinoscriptsyntax as rs
 from compas.datastructures import Mesh
 from compas.geometry import Line
 from compas.geometry import KDTree
-from compas.topology import delaunay_from_points
+# from compas.topology import delaunay_from_points
 
 
 class Utilities():
