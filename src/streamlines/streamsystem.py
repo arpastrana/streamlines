@@ -5,9 +5,9 @@ A compas implementation of a streamline system.
 
 __name__ = "Streamsystem"
 __author__ = "Rafael Pastrana"
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 __creation__ = "2018.11.12"
-__date__ = "2018.11.12"
+__date__ = "2019.03.12"
 
 
 import imp
@@ -26,10 +26,10 @@ imp.reload(node)
 imp.reload(streamline)
 imp.reload(utilities)
 
+from utilities import Utilities
 from node import Node
 from streamline import Streamline
-from utilities import Utilities
-
+from timeit import default_timer as timer
 
 ut = Utilities()
 
@@ -70,6 +70,14 @@ class Streamsystem:
         self.offset_vectors = []
         self.intersection_points = []
 
+        self.grow_1_timing = 0.0
+        self.grow_2_timing = 0.0
+        self.grow_3_timing = 0.0
+        self.grow_4_timing = 0.0
+        self.grow_5_timing = 0.0
+
+        self.timing_6 = 0.0
+
     def clone_streamsystem(self, streamsystem):
         self.streamlines = streamsystem.streamlines
         self.objs = streamsystem.objs
@@ -80,43 +88,69 @@ class Streamsystem:
         self.w = w
         self.min_length = min_length
 
+    # @ut.timing
     def get_new_streamline(self, point, o_prox=1.0, st_o_prox=0.8, s_prox=4.0):
         seed_node = self.make_new_node(point)
         sep = self.get_threshold_distance(seed_node) * st_o_prox
+        start = timer()
         invalid = self.get_neighbor_proximity(seed_node.pos, sep)
+        end = timer()
+        thing = end - start
+        self.timing_6 += thing
 
         if invalid is False:
+
             new_streamline = self.make_streamline(seed_node, o_prox, s_prox)
             return new_streamline
 
-        print('seed was at start too close to others')
+        # print('seed was at start too close to others')
         return None
 
+    # @ut.timing
     def make_streamline(self, seed, o_prox=1.0, s_prox=1.0):
-        strm = Streamline(seed)
-        strm.nd_search.append(seed)  # append to search
+    	start = timer()
+    	strm = Streamline(seed)
+    	strm.nd_search.append(seed)  # append to search
+    	end = timer()
+    	thing = end - start
+    	self.grow_3_timing += thing
+    	
+    	start = timer()
+    	self.grow(strm, vtag=self.v_tag, direction='forth', dL=self.dL, o_prox=o_prox, s_prox=s_prox)
+    	end = timer()
+    	thing = end - start
+    	self.grow_1_timing += thing
+    	strm.activate_growth()
+    	
+    	start = timer()
+    	self.grow(strm, vtag=self.v_tag, direction='back', dL=self.dL, o_prox=o_prox, s_prox=s_prox)
+    	end = timer()
+    	thing = end - start
+    	self.grow_2_timing += thing
+    	strm.activate_growth()
+    	
+    	start = timer()
+    	strm.arrange_nodes()
+    	strm.create_polyline()
+    	end = timer()
+    	thing = end - start
+    	self.grow_4_timing += thing
 
-        print('....... growing forth ......')
-        self.grow(strm, vtag=self.v_tag, direction='forth', dL=self.dL, o_prox=o_prox, s_prox=s_prox)
-        strm.activate_growth()
-        print('....... growing back ......')
-        self.grow(strm, vtag=self.v_tag, direction='back', dL=self.dL, o_prox=o_prox, s_prox=s_prox)
-        print('....... creating polyline  ......')
-
-        strm.arrange_nodes()
-        strm.create_polyline()
-
-        if strm.polyline is not None:
-            poly_length = strm.polyline.length
-            if poly_length > self.min_length:
-                self.streamlines.append(strm)
-                self.objs.extend(strm.nodes)
-            else:
-                self.short_streamlines.append(strm)
-                print('length is: {} but wont be added'.format(poly_length))
-        else:
-            print('creation of polyline failed')
-        return strm
+    	start = timer()
+    	if strm.polyline is not None:
+    		poly_length = strm.polyline.length
+    		if poly_length > self.min_length:
+    			self.streamlines.append(strm)
+    			self.objs.extend(strm.nodes)
+    		else:
+    			self.short_streamlines.append(strm)
+    			print('length is: {} but wont be added'.format(poly_length))
+    	else:
+    		print('creation of polyline failed')
+    	end = timer()
+    	thing = end - start
+    	self.grow_5_timing += thing
+    	return strm
 
     def make_streamlines_mebarki(self, seeds, o_prox, st_o_prox):
         while len(seeds) > 0:
@@ -126,6 +160,7 @@ class Streamsystem:
             streamline = self.get_new_streamline(pt_seed, o_prox=o_prox, st_o_prox=st_o_prox)
             print('streamline was {}'.format(streamline))
 
+    @ut.timing
     def make_streamlines_jobard(self, strat_f, o_prox, st_o_prox, s_prox, num_samples, ite):
         # 1. create queue list with streamlines. store them as they appear
         queue = []
@@ -142,16 +177,18 @@ class Streamsystem:
         self.streamlines[:] = []  # clear first streamline
 
         # 4. append first streamline to the queue
-        print('******* initial streamline created *********')
+        # print('******* initial streamline created *********')
         heapq.heappush(queue, (0, strm))
 
         count = 0
         node_count = 0
-
+        timing_1 = 0.
+        timing_2 = 0.
+        timing_3 = 0.
         # 5. pop streamline-i from queue
         for i in range(ite):
             if len(queue) > 0:
-                print('******* new streamline popped *********')
+                # print('******* new streamline popped *********')
                 as_, cu_strm = heapq.heappop(queue)
                 count += 1
 
@@ -160,6 +197,7 @@ class Streamsystem:
 
                 # 8. select node and offset to the right and left
                 # while len(s_) > 0:
+                
                 if s_ is not None:
                     # while len(s_) > 0:
                     for i in range(num_samples):
@@ -174,159 +212,45 @@ class Streamsystem:
                                 cu_sep = cu_sep / 2
 
                         # 9. make points with particle tracing
-                            pt_right = self.get_offset_point(cu_nd, cu_sep)
-                            pt_left = self.get_offset_point(cu_nd, cu_sep, True)
+                            # pt_right = self.get_offset_point(cu_nd, cu_sep)
+                            # pt_left = self.get_offset_point(cu_nd, cu_sep, True)
+                            _start = timer()
+                            pt_right, pt_left = self.get_side_pts(cu_nd, cu_sep)
+                            _end = timer()
+                            _thing = _end - _start
+                            timing_1 += _thing 
 
                         # 10. make streamline-j. append to queue
                             for pt_ in [pt_right, pt_left]:
                                 new_streamline = None
                                 if pt_ is not None:
-                                    print('******* new streamline starts *********')
-                                    # self.update_search_tree()
-                                    new_streamline = self.get_new_streamline(pt_,
-                                                                             o_prox,
-                                                                             st_o_prox,
-                                                                             s_prox,
-                                                                             )
+                                	_start = timer()
+                                	new_streamline = self.get_new_streamline(pt_, o_prox, st_o_prox, s_prox)
+                                	_end = timer()
+                                	_thing = _end - _start
+                                	timing_2 += _thing
+
                                 if new_streamline is not None:
                                     # heapq.heappush(queue, (count, new_streamline))
                                     heapq.heappush(queue, (cu_sep, new_streamline))
 
-        print('Number of Processed Nodes was: {}'.format(node_count))
-
-    def make_streamlines_fungi(self, le, s_factor, iterations):
-        min_sp = self.get_max_face_spacing() * 1.0
-        print('******* work starts *********')
-
-        # 1. get all resampled nodes
-        streamlines = [str for str in self.streamlines]
-
-        for it in range(iterations):
-            print('******* iteration {} began *********'.format(it))
-            my_dict = {}
-            new_streamlines = []
-
-            for idx, strm in enumerate(streamlines):
-                s_ = self.make_sampling_nodes(strm, min_sp, le, heap=False)
-                if s_ is not None:
-                    my_dict[idx] = s_
-
-            # iterate over all streamlines
-            for key, value in my_dict.items():
-                if key in range(10000):
-                    print('******* streamline {} is taken *******'.format(key))
-                    new_nodes = []
-                    other_segs = []
-                    flags = []
-                    others = []
-
-                    other_streamlines = [v for k, v in my_dict.items() if k != key]
-                    # ref = self.get_offset_vector(value[0][1])
-
-                    # make search tree
-                    for other_nodes in other_streamlines:
-                        poly_pts = []
-                        for other_sep, other_node in other_nodes:
-                            others.append(other_node.pos)
-                            self.other_points.append(rs.AddPoint(*other_node.pos))
-                            poly_pts.append(other_node.pos)
-                        polyline = Polyline(poly_pts)
-
-                        if polyline is not None:
-                            other_segs.extend(polyline.lines)
-
-                    tree = KDTree(others)
-
-                    # find neighbors
-                    for sep, nd in value:
-                        # find tangent vector
-                        vec = self.get_offset_vector(nd)
-                        # vec = cg.scale_vector(vec, -1.)
-                        # vec = ut.align_vector(vec, ref)
-
-                    # find segment plane intersections
-                        pl = (nd.pos, nd.vel)
-                        ints = []
-                        for seg in other_segs:
-                            if seg is not None:
-                                seg = (seg.start, seg.end)
-                                intr = cg.intersection_segment_plane(seg, pl)
-
-                                if intr is not None:
-                                    ints.append(intr)
-
-                    # create segment tree
-                        seg_tree = KDTree(ints)
-                        # print('number of intersections is {}'.format(len(ints)))
-                        # print('segment tree created!')
-
-                    # find neighbors
-                        nbrs = tree.nearest_neighbors(nd.pos, 8, True)
-                        nbrs = seg_tree.nearest_neighbors(nd.pos, 4, True)
-
-                    # split neighbors to the right or to the left
-                        nbrs_right = []
-                        for nbr in nbrs:
-                            if nbr[0] is not None:
-                                nbr_vec = cg.Vector.from_start_end(nd.pos, nbr[0])
-                                if cg.dot_vectors(vec, nbr_vec) > 0:
-                                    nbrs_right.append((nbr[0], nbr[2]))
-
-                    # set node links
-                        pt_right = None
-                        if len(nbrs_right) > 0:
-                            pt_right = min(nbrs_right, key=lambda x: x[1])[0]
-                        else:
-                            print('no points on the right...')
-
-                        if pt_right is not None:
-
-                            node_right = self.make_new_node(pt_right)
-                            pts = [nd.pos, pt_right]
-
-                            rs_pts = list(map(lambda x: rs.AddPoint(*x), pts))
-                            rs_crv = rs.AddPolyline(rs_pts)
-                            rs_crv = rs.PullCurveToMesh(self.s_mesh.ghMesh, rs_crv)
-                            length = rs.CurveLength(rs_crv) * s_factor
-                            self.links_right.append(rs_crv)
-
-                            mid = rs.CurveMidPoint(rs_crv)
-                            midpoint = [mid.X, mid.Y, mid.Z]
-                            mid_node = self.make_new_node(midpoint)
-                            new_nodes.append(mid_node)
-
-                            sep_right = self.s_mesh.c_mesh.get_face_attribute(node_right.f_id, self.s_tag)
-                            sep_mid = self.s_mesh.c_mesh.get_face_attribute(mid_node.f_id, self.s_tag)
-                            seps = [sep, sep_right, sep_mid]
-
-                            if length > min(seps):
-                                flag = True
-                            elif length <= min(seps):
-                                flag = False  # False
-                            flags.append(flag)
-
-                    # after iterating over all streamline nodes
-                    sliced_nodes = ut.slice_list_flags(new_nodes, flags)
-
-                    # for each entry in split new nodes create streamline
-                    if len(sliced_nodes) > 0:
-                        for sl_nodes in sliced_nodes:
-                            if len(sl_nodes) > 1:
-                                new_streamline = Streamline(sl_nodes[0])
-                                for new_node in sl_nodes:
-                                    new_streamline.add_node(new_node)
-                                new_streamline.create_polyline()
-                                if new_streamline.polyline is not None:
-                                    new_streamlines.append(new_streamline)
-
-            streamlines.extend(new_streamlines)
-
-        # print('num of output streamlines is {}'.format(len(streamlines)))
-        self.streamlines[:] = []
-        self.streamlines = [st for st in streamlines]
-        # print('num of output attr streamlines is {}'.format(len(self.streamlines)))
         # print('Number of Processed Nodes was: {}'.format(node_count))
+        print('get side pts took: {} ms'.format(timing_1 * 1000))
+        print('make streamlines took: {} ms'.format(timing_2 * 1000))
+        print('grow 1 took: {} ms'.format(self.grow_1_timing * 1000))
+        print('grow 2 took: {} ms'.format(self.grow_2_timing * 1000))
+        print('instantiating streamlines took: {} ms'.format(self.grow_3_timing * 1000))
+        print('polyline making took: {} ms'.format(self.grow_4_timing * 1000))
+        print('polyline misc took: {} ms'.format(self.grow_5_timing * 1000))
+        print('neighbor start took: {} ms'.format(self.timing_6 * 1000))
 
+    # @ut.timing
+    def get_side_pts(self, my_node, my_sep):
+    	pt_r = self.get_offset_point(my_node, my_sep)
+    	pt_l = self.get_offset_point(my_node, my_sep, True)
+    	return pt_r, pt_l
+
+    # @ut.timing
     def grow(self,
              strm,
              vtag=None,
@@ -438,13 +362,14 @@ class Streamsystem:
             d = self.s_mesh.c_mesh.get_face_attribute(node.f_id, self.s_tag)
         return d
 
+    # @ut.timing
     def check_proximity(self, streamline, node, max_dist, other_prox, ds_self):
         if self.is_point_close(node.pos, max_dist * other_prox) is True:
-            print('too close to others')
+            # print('too close to others')
             return False
 
         elif streamline.is_point_close(node.pos, ds_self, 5) is True:
-            print('too close to itself')
+            # print('too close to itself')
             return False
 
         # o_nbrs = node.find_neighbors(self.s_mesh.c_mesh, streamline.nd_search)
@@ -471,7 +396,7 @@ class Streamsystem:
         nnbr, label, dst = self.tree.nearest_neighbor(point, exclude)
         if dst is not None:
             if dst < distance:
-                print('Distance to KDTree is {}'.format(dst))
+                # print('Distance to KDTree is {}'.format(dst))
                 return True
         return False
 
@@ -492,6 +417,7 @@ class Streamsystem:
         new_node.update_vel(new_velocity)
         return new_node
 
+    # @ut.timing
     def intersect(self, node, new_node, streamline, new_position, vector, pr):
         ints = self.get_edge_intersections(node, new_node)
 
@@ -507,7 +433,7 @@ class Streamsystem:
                              )
             # test against found faces
             if new_faces[0] is None:  # it hit the boundary
-                print('It hit the boundary. It stopped.')
+                # print('It hit the boundary. It stopped.')
                 new_node.update_pos(int_pos)
                 new_node.f_id = new_faces[0]
                 streamline.nd_search.append(new_node)  # append to search
@@ -542,7 +468,7 @@ class Streamsystem:
 
             else:  # it is outside of the mesh
                 # print('dst is: {}'.format(dst))
-                print('OUT. distance is larger than tol')
+                # print('OUT. distance is larger than tol')
 
                 # streamline.grow = False
                 # break
@@ -593,6 +519,7 @@ class Streamsystem:
 
         return new_node
 
+    # @ut.timing
     def make_sampling_nodes(self, strm, threshold_sp, length=0.2, heap=True):
         # samp_pts, samp_vels = strm.resample_polyline(length)
         samp_pts, samp_vels = strm.resample_curve(length)
@@ -612,8 +539,8 @@ class Streamsystem:
                     else:
                         sampling.append((s, s_nd))
                 else:
-                    print('spacing is {}'.format(s))
-                    print('threshold is {}'.format(threshold_sp))
+                    # print('spacing is {}'.format(s))
+                    # print('threshold is {}'.format(threshold_sp))
                     print('spacing larger than given threshold')
             return sampling
         return None
@@ -623,6 +550,7 @@ class Streamsystem:
         normal = self.s_mesh.c_mesh.face_normal(node.f_id)
         return cg.normalize_vector(cg.cross_vectors(node.vel, normal))
 
+    # @ut.timing
     def get_offset_point(self, node, offset, reverse=False):
         # print('offset distance is {}'.format(offset))
         offset_vector = self.get_offset_vector(node)
@@ -649,7 +577,7 @@ class Streamsystem:
         nnbr, label, dst = self.tree.nearest_neighbor(point, exclude)
         if dst is not None:
             if dst < distance:
-                print('Distance at start to KDTree is {}'.format(dst))
+                # print('Distance at start to KDTree is {}'.format(dst))
                 return True
         return False
 

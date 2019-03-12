@@ -19,6 +19,7 @@ import rhinoscriptsyntax as rs
 from compas.datastructures import Mesh
 from compas.geometry import Line
 from compas.geometry import KDTree
+from timeit import default_timer as timer
 # from compas.topology import delaunay_from_points
 
 
@@ -26,6 +27,15 @@ class Utilities():
 
     def __init__(self):
         pass
+
+    def timing(self, f):
+        def wrap(*args, **kwargs):
+            time1 = timer()
+            ret = f(*args, **kwargs)
+            time2 = timer()
+            print('{:s} function took {:.3f} ms'.format(f.__name__, (time2-time1)*1000.0))
+            return ret
+        return wrap
 
     def is_point_close(self, point, objs, distance, exclude=None, d_out=False):
         try:
