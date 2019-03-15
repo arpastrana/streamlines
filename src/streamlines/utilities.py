@@ -58,17 +58,22 @@ class Utilities():
         return None
 
     def align_vector(self, vector_a, vector_b):
+        '''
+        It aligns vector a to vector b.
+        '''
         if cg.dot_vectors(vector_a, vector_b) < 0:
             return cg.scale_vector(vector_a, -1.)
-        else:
-            return vector_a
+        return vector_a
 
     def get_dist_weights(self, point, point_cloud):
-        dst = []
-        weigths = []
+        # dst = []
+        # weigths = []
 
-        for c_point in point_cloud:
-            dst.append(cg.distance_point_point(point, c_point))
+        # for c_point in point_cloud:
+        #     dst.append(cg.distance_point_point(point, c_point))
+
+        dst = list(map(lambda x: cg.distance_point_point(point, x), point_cloud))
+
 
         if len(dst) > 1:
             massDistance = reduce(lambda x, y: x+y, dst)
@@ -139,6 +144,18 @@ class Utilities():
             else:
                 aligned_vecs.append(vec_t[0])
         return aligned_vecs
+
+   # def filter_aligned_vectors(self, vec, vecs_a, vecs_b):
+   #      vec_tuples = zip(vecs_a, vecs_b)
+   #      aligned_vecs = []
+
+   #      for vec_t in vec_tuples:
+   #          if cg.dot_vectors(vec, vec_t[0]) < 0:
+   #              aligned_vecs.append(vec_t[1])
+
+   #          else:
+   #              aligned_vecs.append(vec_t[0])
+   #      return aligned_vecs
 
     def delaunay_is_point_close(self, pt, points, distance):
         if pt in points:

@@ -161,22 +161,37 @@ class StructuralMesh():
             self.c_mesh.set_vertex_attribute(v, str(name) + '_b', nd_vec_b)
 
     def get_vector_on_face(self, point, f_key, name, vec=[0, 0, 0]):
+        '''
+        Inputs:
+        - point: compas point
+        - f_key: mesh face key
+        - name: vector field name, as stored in custom mesh
+
+        Optional:
+        - vec: reference vector for alignment
+        '''
+
+        # getters
         v_keys = self.c_mesh.face_vertices(f_key)
+        pt_cloud = self.c_mesh.face_coordinates(f_key)
         v_vectors_a = self.c_mesh.get_vertices_attribute(str(name) + '_a',
                                                         keys=v_keys
                                                         )
-        v_vectors_b = self.c_mesh.get_vertices_attribute(str(name) + '_b',
-                                                        keys=v_keys
-                                                        )
+        # v_vectors_b = self.c_mesh.get_vertices_attribute(str(name) + '_b',
+        #                                                 keys=v_keys
+        #                                                 )
 
-        v_vectors = ut.filter_aligned_vectors(vec, v_vectors_a, v_vectors_b)
-        pt_cloud = self.c_mesh.face_coordinates(f_key)
+        # v_vectors = ut.filter_aligned_vectors(vec, v_vectors_a, v_vectors_b)
+
+        v_vectors = list(map(lambda x: ut.align_vector(x, vec), v_vectors_a))
         weights = ut.get_dist_weights(point, pt_cloud)
+        new_vectors = list(map(lambda x, y: x * y, v_vectors, weights))
 
-        new_vectors = []
-        for idx, vec in enumerate(v_vectors):
-            new_vector = cg.scale_vector(vec, weights[idx])
-            new_vectors.append(new_vector)
+        # new_vectors = []
+        # for idx, vec in enumerate(v_vectors):
+        #     new_vector = cg.scale_vector(vec, weights[idx])
+        #     new_vectors.append(new_vector)
+
         return reduce(lambda x, y: cg.add_vectors(x, y), new_vectors)
 
     def get_vector_on_face_ext(self, point, f_key, name, vec=[0, 0, 0]):

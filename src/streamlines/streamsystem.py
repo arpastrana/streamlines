@@ -77,6 +77,11 @@ class Streamsystem:
         self.grow_5_timing = 0.0
 
         self.timing_6 = 0.0
+        self.timing_7 = 0.0
+        self.timing_8 = 0.0
+        self.timing_9 = 0.0
+        self.timing_10 = 0.0
+        self.timing_11 = 0.0
 
     def clone_streamsystem(self, streamsystem):
         self.streamlines = streamsystem.streamlines
@@ -92,7 +97,11 @@ class Streamsystem:
     def get_new_streamline(self, point, o_prox=1.0, st_o_prox=0.8, s_prox=4.0):
         seed_node = self.make_new_node(point)
         sep = self.get_threshold_distance(seed_node) * st_o_prox
+        
+        invalid = False
         start = timer()
+        self.update_search_tree()
+        
         invalid = self.get_neighbor_proximity(seed_node.pos, sep)
         end = timer()
         thing = end - start
@@ -236,13 +245,19 @@ class Streamsystem:
 
         # print('Number of Processed Nodes was: {}'.format(node_count))
         print('get side pts took: {} ms'.format(timing_1 * 1000))
-        print('make streamlines took: {} ms'.format(timing_2 * 1000))
+        print('get new streamlines took: {} ms'.format(timing_2 * 1000))
         print('grow 1 took: {} ms'.format(self.grow_1_timing * 1000))
         print('grow 2 took: {} ms'.format(self.grow_2_timing * 1000))
         print('instantiating streamlines took: {} ms'.format(self.grow_3_timing * 1000))
         print('polyline making took: {} ms'.format(self.grow_4_timing * 1000))
         print('polyline misc took: {} ms'.format(self.grow_5_timing * 1000))
         print('neighbor start took: {} ms'.format(self.timing_6 * 1000))
+        print('---Inside Grow ---')
+        print('Get vector and align it took: {} ms'.format(self.timing_7 * 1000))
+        print('Project vector and translate took: {} ms'.format(self.timing_8 * 1000))
+        print('Clone node took: {} ms'.format(self.timing_9 * 1000))
+        print('Segment intersection took: {} ms'.format(self.timing_10 * 1000))
+        print('Extendin lists took: {} ms'.format(self.timing_11 * 1000))
 
     # @ut.timing
     def get_side_pts(self, my_node, my_sep):
@@ -256,7 +271,7 @@ class Streamsystem:
              vtag=None,
              direction='forth',
              dL=0.02,
-             check_proximity=True,
+             check_proximity=False,
              exit=True,
              max_iter=2000,
              pull_factor=0.2,
@@ -284,7 +299,7 @@ class Streamsystem:
 
             # 1. get seed point to grow from and initial vector
             nd = nodes[-1]
-            strm.update_search_tree()
+            # strm.update_search_tree()
             self.get_growth_direction(nd, count, direction)
 
             # 2. get threshold distances
@@ -297,27 +312,44 @@ class Streamsystem:
                     break
 
             # 3b. temporary for simmetry:  # temporary
-            alpha = 0.00
-            if nd.x <= alpha or nd.y >= alpha:
+            #alpha = 0.00
+            #if nd.x <= alpha or nd.y >= alpha:
                 # print('larger than {}'.format(alpha))
-                break
+                # break
 
             # 4. find vector to follow
+            start = timer()
             if vtag is None:
                 vec = nd.vel
             else:
+                # interpolation function (TO-DO) (Kind of done now) (2nd worse)
                 vec = self.s_mesh.get_vector_on_face(nd.pos, nd.f_id, vtag, nd.vel)
                 vec = ut.align_vector(cg.normalize_vector(vec), nd.vel)
+            end = timer()
+            thing = end - start
+            self.timing_7 += thing
 
             # 5. project vector to face plane and create new point
+            start = timer()
             vec = self.project_vector_on_mesh(nd, vec, proj_dist)
             new_pos = cg.translate_points([nd.pos], vec)[0]
+            end = timer()
+            thing = end - start
+            self.timing_8 += thing
 
             # 6. create new displace node
+            start = timer()
             new_nd = self.clone_node(nd, new_pos, vec)
+            end = timer()
+            thing = end - start
+            self.timing_9 += thing
 
-            # 7. check for intersections with mesh edges
+            # 7. check for intersections with mesh edges (TO-DO) (worse)
+            start = timer()
             n_nd, ap, flag = self.intersect(nd, new_nd, strm, new_pos, vec, pr)
+            end = timer()
+            thing = end - start
+            self.timing_10 += thing
 
             # 8. store new node
             if ap is True:
@@ -340,11 +372,15 @@ class Streamsystem:
                     break
 
         # 12. the while loop is done, extend correspoinding nodes list
+        start = timer()
         nodes.pop(0)
         if direction == 'forth':
             strm.nodes_forth.extend(nodes)
         elif direction == 'back':
             strm.nodes_back.extend(nodes)
+        end = timer()
+        thing = end - start
+        self.timing_11 += thing
 
         if output is True:
             if len(nodes) > 0:
@@ -506,7 +542,6 @@ class Streamsystem:
                         intersections.append((compas_int, u, v, node))
         if len(intersections) > 0:
             return intersections[0]  # take the first entry only
-
         return None
 
     def make_new_node(self, point, velocity=None):
@@ -573,7 +608,7 @@ class Streamsystem:
         return offset_point
 
     def get_neighbor_proximity(self, point, distance, exclude=None):
-        self.update_search_tree()
+        # self.update_search_tree()
         nnbr, label, dst = self.tree.nearest_neighbor(point, exclude)
         if dst is not None:
             if dst < distance:
