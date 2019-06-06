@@ -13,7 +13,7 @@ __date__ = "2018.11.12"
 import compas
 import compas_rhino
 import math
-import node
+
 import rhinoscriptsyntax as rs
 import Rhino.Geometry as rg
 
@@ -21,6 +21,8 @@ from compas.datastructures import Mesh
 from compas.geometry import Line
 from compas.geometry import Polyline
 from compas.geometry import KDTree
+
+from streamlines.node import Node
 
 
 class Streamline():

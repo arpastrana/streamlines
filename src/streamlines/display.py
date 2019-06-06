@@ -12,12 +12,10 @@ __date__ = "2018.11.12"
 
 import imp
 import rhinoscriptsyntax as rs
-import Utilities
 
-imp.reload(Utilities)
+from streamlines.utilities import Utilities
 
 from compas import geometry as cg
-from Utilities import Utilities
 
 
 ut = Utilities()

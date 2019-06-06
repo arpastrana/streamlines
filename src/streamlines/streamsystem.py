@@ -2,7 +2,6 @@
 A compas implementation of a streamline system.
 '''
 
-
 __name__ = "Streamsystem"
 __author__ = "Rafael Pastrana"
 __version__ = "0.0.4"
@@ -15,21 +14,12 @@ import heapq
 import compas.geometry as cg
 import rhinoscriptsyntax as rs
 
-import node
-import streamline
-import utilities
-
 from compas.geometry import KDTree
 from compas.geometry import Polyline
 
-imp.reload(node)
-imp.reload(streamline)
-imp.reload(utilities)
-
-from node import Node
-from streamline import Streamline
-from utilities import Utilities
-
+from streamlines.node import Node
+from streamlines.streamline import Streamline
+from streamlines.utilities import Utilities
 
 ut = Utilities()
 
@@ -339,8 +329,7 @@ class Streamsystem:
              o_prox=1.0,
              s_prox=1.0,
              output=False,
-             target_length=None
-             ):
+             target_length=None):
 
         # 1. set major parameters
         proj_dist = dL  # scale for vector to be projected on plane
@@ -373,10 +362,6 @@ class Streamsystem:
                     break
 
             # 3b. temporary for simmetry:  # temporary
-            alpha = 0.00
-            if nd.x <= alpha or nd.y >= alpha:
-                # print('larger than {}'.format(alpha))
-                break
 
             # 4. find vector to follow
             if vtag is None:
@@ -437,6 +422,15 @@ class Streamsystem:
         if self.uni_sp is False:
             d = self.s_mesh.c_mesh.get_face_attribute(node.f_id, self.s_tag)
         return d
+
+    def get_neighbor_proximity(self, point, distance, exclude=None):
+        self.update_search_tree()
+        nnbr, label, dst = self.tree.nearest_neighbor(point, exclude)
+        if dst is not None:
+            if dst < distance:
+                print('Distance at start to KDTree is {}'.format(dst))
+                return True
+        return False
 
     def check_proximity(self, streamline, node, max_dist, other_prox, ds_self):
         if self.is_point_close(node.pos, max_dist * other_prox) is True:
@@ -643,15 +637,6 @@ class Streamsystem:
         if offset_streamline.polyline is not None:
             self.offsets.append(offset_streamline)
         return offset_point
-
-    def get_neighbor_proximity(self, point, distance, exclude=None):
-        self.update_search_tree()
-        nnbr, label, dst = self.tree.nearest_neighbor(point, exclude)
-        if dst is not None:
-            if dst < distance:
-                print('Distance at start to KDTree is {}'.format(dst))
-                return True
-        return False
 
     def get_max_face_centroid(self):
         f_keys = [f for f in self.s_mesh.c_mesh.faces()]

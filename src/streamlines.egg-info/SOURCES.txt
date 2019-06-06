@@ -1,5 +1,3 @@
-.bumpversion.cfg
-.editorconfig
 AUTHORS.rst
 CHANGELOG.rst
 CONTRIBUTING.rst
@@ -10,6 +8,7 @@ README.rst
 pytest.ini
 requirements-dev.txt
 setup.cfg
+setup.py
 tasks.py
 docs/authors.rst
 docs/changelog.rst
@@ -23,10 +22,22 @@ docs/_static/logo.png
 docs/reference/index.rst
 src/streamlines/__init__.py
 src/streamlines/__version__.py
+src/streamlines/basic_sandwich.py
+src/streamlines/boid.py
+src/streamlines/custom_mesh.py
+src/streamlines/display.py
+src/streamlines/materials.py
+src/streamlines/node.py
 src/streamlines/sample_module.py
+src/streamlines/streamline.py
+src/streamlines/streamsystem.py
+src/streamlines/temp.py
+src/streamlines/utilities.py
 src/streamlines.egg-info/PKG-INFO
 src/streamlines.egg-info/SOURCES.txt
 src/streamlines.egg-info/dependency_links.txt
 src/streamlines.egg-info/not-zip-safe
 src/streamlines.egg-info/top_level.txt
+src/streamlines/fea/fea.py
+src/streamlines/fea/postprocessing.py
 tests/test_sample.py

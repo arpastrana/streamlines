@@ -16,10 +16,13 @@ import rhinoscriptsyntax as rs
 from compas.datastructures import Mesh
 from compas import geometry as cg
 from compas_rhino import helpers
+
 from math import degrees
 from math import acos
-from utilities import Utilities
+
+from streamlines.utilities import Utilities
 from compas.geometry import KDTree
+
 from compas.topology import dijkstra_distances
 
 

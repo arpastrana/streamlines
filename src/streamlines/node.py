@@ -11,17 +11,16 @@ __date__ = "2018.11.12"
 
 import sys
 import imp
-import boid
+
 import compas
 import compas.geometry as cg
 import compas_rhino
 import math
+
 import rhinoscriptsyntax as rs
 import Rhino.Geometry as rg
 
-imp.reload(boid)
-
-from boid import Boid
+from streamlines.boid import Boid
 from compas.datastructures import Mesh
 from compas.geometry import Point
 from compas.geometry import Line

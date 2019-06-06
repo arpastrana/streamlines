@@ -2,9 +2,9 @@ Metadata-Version: 1.1
 Name: streamlines
 Version: 0.1.0
 Summary: Computation of Streamlines
-Home-page: https://github.com/gramaziokohler/streamlines
-Author: Gramazio Kohler Research
-Author-email: gramaziokohler@arch.ethz.ch
+Home-page: https://github.com/arpastrana/streamlines
+Author: Armando Rafael Pastrana
+Author-email: pastrana@arch.ethz.ch
 License: MIT license
 Description: ============================================================
         streamlines: streamlines

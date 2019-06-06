@@ -9,28 +9,29 @@ __version__ = "0.0.4"
 __creation__ = "2018.11.12"
 __date__ = "2018.11.12"
 
+
 import sys
 import imp
+
 import compas
 import compas.geometry as cg
 import compas_rhino
+
 import math
+
 import rhinoscriptsyntax as rs
 import Rhino.Geometry as rg
-import utilities
 
 from compas.datastructures import Mesh
 from compas.geometry import Point
 from compas.geometry import Line
 from compas.geometry import subtract_vectors
 
-imp.reload(utilities)
-
-from utilities import Utilities
-ut = Utilities()
+from streamlines.utilities import Utilities
 
 
 TOL = 1e-6
+ut = Utilities()
 
 
 class Boid():
