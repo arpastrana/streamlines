@@ -67,7 +67,7 @@ class Node(Boid):
             self.z = point[2]
             self.pos = point
         except Exception:
-            rh_pos = [rh_point.X, rh_point.Y, rh_point.Z]
+            rh_pos = [point.X, point.Y, point.Z]
             self.pos = rh_pos
             self.update_pos(rh_pos)
 

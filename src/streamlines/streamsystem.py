@@ -116,14 +116,20 @@ class Streamsystem:
             streamline = self.get_new_streamline(pt_seed, o_prox=o_prox, st_o_prox=st_o_prox)
             print('streamline was {}'.format(streamline))
 
-    def make_streamlines_jobard(self, strat_f, o_prox, st_o_prox, s_prox, num_samples, ite):
+    def make_streamlines_jobard(self, strat_f, o_prox, st_o_prox, s_prox, num_samples, ite, start_pt=None):
         # 1. create queue list with streamlines. store them as they appear
         queue = []
         heapq.heapify(queue)
 
         # 2. find the most stressed point on the design space faces
         min_sp = self.get_max_face_spacing() * strat_f
-        start_nd = self.make_new_node(self.get_max_face_centroid())
+
+        # 2-b. filter first point
+        if not start_pt:
+            start_pt = self.get_max_face_centroid()
+        start_nd = self.make_new_node(start_pt)
+
+        # 2-c. make first point attribute
         self.first_pt = rs.AddPoint(*start_nd.pos)
 
         # 3. make first streamline
@@ -362,6 +368,10 @@ class Streamsystem:
                     break
 
             # 3b. temporary for simmetry:  # temporary
+            alpha = 0.0
+            if nd.y < alpha:
+                print("Beyond alpha!")
+                break
 
             # 4. find vector to follow
             if vtag is None:
