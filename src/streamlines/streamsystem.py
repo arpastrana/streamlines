@@ -8,11 +8,11 @@ __version__ = "0.0.4"
 __creation__ = "2018.11.12"
 __date__ = "2018.11.12"
 
+import compas
 
 import imp
 import heapq
 import compas.geometry as cg
-import rhinoscriptsyntax as rs
 
 from compas.geometry import KDTree
 from compas.geometry import Polyline
@@ -20,6 +20,12 @@ from compas.geometry import Polyline
 from streamlines.node import Node
 from streamlines.streamline import Streamline
 from streamlines.utilities import Utilities
+
+try:
+    import rhinoscriptsyntax as rs
+except:
+    if compas.IPY:
+        raise
 
 ut = Utilities()
 
@@ -117,6 +123,9 @@ class Streamsystem:
             print('streamline was {}'.format(streamline))
 
     def make_streamlines_jobard(self, strat_f, o_prox, st_o_prox, s_prox, num_samples, ite, start_pt=None):
+        '''
+        '''
+
         # 1. create queue list with streamlines. store them as they appear
         queue = []
         heapq.heapify(queue)
@@ -191,6 +200,8 @@ class Streamsystem:
         print('Number of Processed Nodes was: {}'.format(node_count))
 
     def make_streamlines_fungi(self, le, s_factor, iterations):
+        '''
+        '''
         min_sp = self.get_max_face_spacing() * 1.0
         print('******* work starts *********')
 

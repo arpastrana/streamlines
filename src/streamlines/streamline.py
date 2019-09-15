@@ -14,9 +14,6 @@ import compas
 import compas_rhino
 import math
 
-import rhinoscriptsyntax as rs
-import Rhino.Geometry as rg
-
 from compas.datastructures import Mesh
 from compas.geometry import Line
 from compas.geometry import Polyline
@@ -24,6 +21,11 @@ from compas.geometry import KDTree
 
 from streamlines.node import Node
 
+try:
+    import rhinoscriptsyntax as rs
+except:
+    if compas.IPY:
+        raise
 
 class Streamline():
 

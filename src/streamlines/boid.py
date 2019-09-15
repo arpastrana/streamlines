@@ -19,9 +19,6 @@ import compas_rhino
 
 import math
 
-import rhinoscriptsyntax as rs
-import Rhino.Geometry as rg
-
 from compas.datastructures import Mesh
 from compas.geometry import Point
 from compas.geometry import Line
@@ -29,6 +26,11 @@ from compas.geometry import subtract_vectors
 
 from streamlines.utilities import Utilities
 
+try:
+    import rhinoscriptsyntax as rs
+except:
+    if compas.IPY:
+        raise
 
 TOL = 1e-6
 ut = Utilities()

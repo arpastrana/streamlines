@@ -41,13 +41,13 @@
  import time
  import Utilities
 
-  import compas.geometry as cg
+ import compas.geometry as cg
  import rhinoscriptsyntax as rs
 
-  from compas.datastructures import Mesh
+ from compas.datastructures import Mesh
  from functools import total_ordering
 
-  imp.reload(Utilities)
+ imp.reload(Utilities)
  ut = Utilities.Utilities()
 
  
@@ -481,7 +481,7 @@
          self.cluster = None
 
  
-  @total_ordering
+ @total_ordering
  class KeyDict(object):
      def __init__(self, key, dct):
          self.key = key

@@ -17,9 +17,6 @@ import compas.geometry as cg
 import compas_rhino
 import math
 
-import rhinoscriptsyntax as rs
-import Rhino.Geometry as rg
-
 from streamlines.boid import Boid
 from compas.datastructures import Mesh
 from compas.geometry import Point

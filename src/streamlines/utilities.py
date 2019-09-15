@@ -14,12 +14,12 @@ import compas
 import compas_rhino
 import compas.geometry as cg
 import math
-import rhinoscriptsyntax as rs
 
 from compas.datastructures import Mesh
 from compas.geometry import Line
 from compas.geometry import KDTree
-from compas.geometry import delaunay_from_points
+# from compas.geometry import delaunay_from_points
+
 
 
 class Utilities():
