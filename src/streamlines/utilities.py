@@ -20,6 +20,7 @@ from compas.geometry import Line
 from compas.geometry import KDTree
 # from compas.geometry import delaunay_from_points
 
+from functools import reduce
 
 
 class Utilities():

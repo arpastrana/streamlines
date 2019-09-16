@@ -379,10 +379,10 @@ class Streamsystem:
                     break
 
             # 3b. temporary for simmetry:  # temporary
-            alpha = 0.0
-            if nd.y < alpha:
-                print("Beyond alpha!")
-                break
+            # alpha = 0.0
+            # if nd.y < alpha:
+            #     print("Beyond alpha!")
+            #     break
 
             # 4. find vector to follow
             if vtag is None:
@@ -458,9 +458,9 @@ class Streamsystem:
             print('too close to others')
             return False
 
-        elif streamline.is_point_close(node.pos, ds_self, 5) is True:
-            print('too close to itself')
-            return False
+        # elif streamline.is_point_close(node.pos, ds_self, 5) is True:
+        #     print('too close to itself')
+        #     return False
 
         # o_nbrs = node.find_neighbors(self.s_mesh.c_mesh, streamline.nd_search)
         # if o_nbrs:

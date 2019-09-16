@@ -15,22 +15,20 @@ from compas.geometry import is_point_in_triangle_xy
 
 HERE = '/Users/arpj/code/libraries/streamlines/examples/four_point_slab.json'
 
-'''
 tags = [
-    n_1
-    n_2
-    m_1
-    m_2
-    ps_1_top
-    ps_1_bot
-    ps_1_mid
-    ps_2_top
-    ps_2_bot
-    ps_2_mid
-    custom_1
-    custom_2
+    'n_1',
+    'n_2',
+    'm_1',
+    'm_2',
+    'ps_1_top',
+    'ps_1_bot',
+    'ps_1_mid',
+    'ps_2_top',
+    'ps_2_bot',
+    'ps_2_mid',
+    'custom_1',
+    'custom_2'
 ]
-'''
 
 
 def vector_lines_on_faces(mesh, vector_tag, length=0.02):
@@ -118,7 +116,6 @@ def trimesh_closest_point_xy(mesh, point):
     '''
     '''
     closest_pts = []
-    # heapq.heapify(closest_points)
 
     for fkey in mesh.faces():
         triangle = mesh.face_coordinates(fkey)
@@ -135,6 +132,7 @@ def trimesh_closest_point_xy(mesh, point):
 
     return sorted(closest_pts, key=lambda x: x[2])[0]
 
+
 if __name__ == '__main__':
 
     from compas.datastructures import Mesh
@@ -142,19 +140,41 @@ if __name__ == '__main__':
 
     from compas_plotters import MeshPlotter
 
+    from streamlines.streamsystem import Streamsystem
+    from streamlines.custom_mesh import StructuralMesh
 
     mesh = Mesh()
     mesh.load(HERE)
     mesh_unify_cycles(mesh)
 
-    lines = vector_lines_on_faces(mesh, 'ps_1_bot', length=0.05)
+    vector_tag = 'ps_1_bot'
+    lines = vector_lines_on_faces(mesh, vector_tag, length=0.05)
     lines = [line for line in map(line_tuple_to_dict, lines)]
 
     test_pt = [3.0, 2.5, 0.5]
-    # test_pt = [2.11956516901652, 2.9333333174387612, 0.0]
     output = trimesh_closest_point_xy(mesh, test_pt)
     closest_pt, fkey, dist = output
-    print(output)
+    seeds = [closest_pt]
+    seeds = [mesh.vertex_coordinates(vkey) for vkey in mesh.vertices()]
+    
+    str_mesh = StructuralMesh(mesh)
+
+    for tag in tags:
+        vector_field = mesh.get_faces_attribute(keys=list(mesh.faces()), name=tag)
+        str_mesh.set_face_vectors(vector_field, tag, normalize=True)
+        str_mesh.set_vertex_vectors_angles(tag)
+
+    streamsystem = Streamsystem(str_mesh, 'dummy', dL=0.025, min_sp=0.20, uni_sp=True)
+    streamsystem.set_tracing_data(vector_tag, [0, 0, 0], min_length=0.20)
+    streamsystem.make_streamlines_mebarki(seeds, o_prox=1.0, st_o_prox=0.5)
+
+    polylines = []
+    for streamline in streamsystem.streamlines:
+        polylines.append({'points': streamline.polyline.points,
+                         'color': (0, 0, 255)
+                         }
+                         )
+
 
     plotter = MeshPlotter(mesh, figsize=(12,9))
     plotter.draw_faces()
@@ -163,4 +183,6 @@ if __name__ == '__main__':
                         {'pos': test_pt, 'facecolor': (0, 0, 255), 'radius': 0.02}
                         ]
                         )
+
+    plotter.draw_polylines(polylines)
     plotter.show()

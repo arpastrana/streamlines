@@ -11,7 +11,6 @@ __date__ = "2018.11.12"
 
 import compas
 import compas_rhino
-import rhinoscriptsyntax as rs
 
 from compas.datastructures import Mesh
 from compas import geometry as cg
@@ -21,19 +20,73 @@ from math import degrees
 from math import acos
 
 from streamlines.utilities import Utilities
+
 from compas.geometry import KDTree
+from compas.geometry import closest_point_on_plane
+from compas.geometry import distance_point_point
 
 from compas.topology import dijkstra_distances
+
+from functools import reduce
+
+try:
+    import rhinoscriptsyntax as rs
+except:
+    if compas.IPY:
+        raise
 
 
 ut = Utilities()
 
 
+def barycentric_coordinates(point, triangle, clamp=False):
+    '''
+    '''
+    a, b, c = triangle
+    pt = point
+
+    def clamper(value):
+        if not clamp:
+            return value
+        if value < 0.0:
+            return 0.0
+        elif value > 1.0:
+            return 1.0
+        return value
+    
+    def barycentric_1():
+        numerator = (b[1] - c[1]) * (pt[0] - c[0]) + (c[0] - b[0]) * (pt[1] - c[1])
+        denominator = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1])
+        return clamper(numerator / denominator)
+
+    def barycentric_2():
+        numerator = (c[1] - a[1]) * (pt[0] - c[0]) + (a[0] - c[0]) * (pt[1] - c[1])
+        denominator = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1])
+        return clamper(numerator / denominator)
+
+    bar_1 = barycentric_1()
+    bar_2 = barycentric_2()
+    bar_3 = 1 - bar_1 - bar_2
+    return [bar_1, bar_2, bar_3]
+
+
+def barycentric_to_cartesian(barycentric, triangle):
+    '''
+    '''
+    bar_1, bar_2, bar_3 = barycentric
+    a, b, c = triangle
+
+    x = a[0] * bar_1 + b[0] * bar_2 + c[0] * bar_3
+    y = a[1] * bar_1 + b[1] * bar_2 + c[1] * bar_3
+
+    return [x, y, 0.0]
+
 class StructuralMesh():
 
-    def __init__(self, gh_mesh, unify=False):
-        self.c_mesh = helpers.mesh.mesh_from_guid(Mesh, gh_mesh)
-        self.gh_mesh = gh_mesh
+    def __init__(self, cmesh, unify=False):
+        # self.c_mesh = helpers.mesh.mesh_from_guid(Mesh, gh_mesh)
+        # self.gh_mesh = gh_mesh
+        self.c_mesh = cmesh
 
         self.adj = None
         self.e_weights = None
@@ -331,9 +384,32 @@ class StructuralMesh():
 
     def closest_point(self, point, maxdist=None):
         maxdist = maxdist
-        point, face = rs.MeshClosestPoint(self.gh_mesh,
-                                          rs.AddPoint(*point),
-                                          maxdist
-                                          )
-        point = [point.X, point.Y, point.Z]
+        # point, face = rs.MeshClosestPoint(self.gh_mesh,
+        #                                   rs.AddPoint(*point),
+        #                                   maxdist
+        #                                   )
+        point, face, dist = self.trimesh_closest_point_xy(self.c_mesh, point)
+
+        # point = [point.X, point.Y, point.Z]
         return point, face
+
+    @staticmethod
+    def trimesh_closest_point_xy(mesh, point):
+        '''
+        '''
+        closest_pts = []
+
+        for fkey in mesh.faces():
+            triangle = mesh.face_coordinates(fkey)
+            plane = (mesh.face_centroid(fkey), mesh.face_normal(fkey))
+            closest_pt = closest_point_on_plane(point, plane)
+            
+            bars = barycentric_coordinates(closest_pt, triangle, clamp=True)
+            closest_pt = barycentric_to_cartesian(bars, triangle)
+
+            closest_pts.append((closest_pt, fkey, distance_point_point(point, closest_pt)))
+
+        if not closest_pts:
+            return None, None, None
+
+        return sorted(closest_pts, key=lambda x: x[2])[0]
