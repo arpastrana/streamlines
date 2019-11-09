@@ -81,6 +81,7 @@ def barycentric_to_cartesian(barycentric, triangle):
 
     return [x, y, 0.0]
 
+
 class StructuralMesh():
 
     def __init__(self, cmesh, unify=False):

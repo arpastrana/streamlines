@@ -10,7 +10,6 @@ __date__ = "2018.11.12"
 
 import compas
 
-import imp
 import heapq
 import compas.geometry as cg
 
@@ -32,13 +31,7 @@ ut = Utilities()
 
 class Streamsystem:
 
-    def __init__(self,
-                 s_mesh,
-                 as_tag,
-                 dL=0.02,
-                 min_sp=0.05,
-                 uni_sp=False
-                 ):
+    def __init__(self, s_mesh, as_tag, dL=0.02, min_sp=0.05, uni_sp=False):
 
         self.s_mesh = s_mesh
         self.dL = dL
@@ -55,7 +48,7 @@ class Streamsystem:
         self.lines = []
         self.int_points = []
         self.objs = []
-        self.tree = KDTree()
+        self.tree = None # KDTree()
 
         self.seed_pts = []
         self.offsets = []
@@ -78,8 +71,9 @@ class Streamsystem:
 
     def get_new_streamline(self, point, o_prox=1.0, st_o_prox=0.8, s_prox=4.0):
         seed_node = self.make_new_node(point)
-        sep = self.get_threshold_distance(seed_node) * st_o_prox
-        invalid = self.get_neighbor_proximity(seed_node.pos, sep)
+        # sep = self.get_threshold_distance(seed_node) * st_o_prox
+        # invalid = self.get_neighbor_proximity(seed_node.pos, sep)
+        invalid = False
 
         if invalid is False:
             new_streamline = self.make_streamline(seed_node, o_prox, s_prox)
@@ -117,7 +111,7 @@ class Streamsystem:
     def make_streamlines_mebarki(self, seeds, o_prox, st_o_prox):
         while len(seeds) > 0:
             print('******* new streamline started *********')
-            self.update_search_tree()
+            # self.update_search_tree()
             pt_seed = seeds.pop(0)
             streamline = self.get_new_streamline(pt_seed, o_prox=o_prox, st_o_prox=st_o_prox)
             print('streamline was {}'.format(streamline))
@@ -334,19 +328,7 @@ class Streamsystem:
         # print('num of output attr streamlines is {}'.format(len(self.streamlines)))
         # print('Number of Processed Nodes was: {}'.format(node_count))
 
-    def grow(self,
-             strm,
-             vtag=None,
-             direction='forth',
-             dL=0.02,
-             check_proximity=True,
-             exit=True,
-             max_iter=2000,
-             pull_factor=0.2,
-             o_prox=1.0,
-             s_prox=1.0,
-             output=False,
-             target_length=None):
+    def grow(self, strm, vtag=None, direction='forth', dL=0.02, check_proximity=True, exit=True, max_iter=2000, pull_factor=0.2, o_prox=1.0, s_prox=1.0, output=False, target_length=None):
 
         # 1. set major parameters
         proj_dist = dL  # scale for vector to be projected on plane
@@ -366,19 +348,19 @@ class Streamsystem:
 
             # 1. get seed point to grow from and initial vector
             nd = nodes[-1]
-            strm.update_search_tree()
+            # strm.update_search_tree()
             self.get_growth_direction(nd, count, direction)
 
             # 2. get threshold distances
             max_dist = self.get_threshold_distance(nd)
 
             # 3. check for proximity to other streamlines
-            if check_proximity is True:
-                if self.check_proximity(strm, nd, max_dist, o_prox, ds_self) is False:
-                    strm.grow = False
-                    break
+            # if check_proximity is True:
+                # if self.check_proximity(strm, nd, max_dist, o_prox, ds_self) is False:
+                #     strm.grow = False
+                #     break
 
-            # 3b. temporary for simmetry:  # temporary
+            # 3b. temporary for symmetry:  # temporary
             # alpha = 0.0
             # if nd.y < alpha:
             #     print("Beyond alpha!")

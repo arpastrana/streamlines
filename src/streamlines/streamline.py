@@ -74,19 +74,21 @@ class Streamline():
         self.grow = True
 
     def update_search_tree(self):
-        self.tree = KDTree([nd.pos for nd in self.nd_search if nd is not None])
+        # self.tree = KDTree([nd.pos for nd in self.nd_search if nd is not None])
+        pass
 
     def is_point_close(self, point, distance, n):
-        exclude = set()
-        for i in range(n):
-            nnbr = self.tree.nearest_neighbor(point, exclude)
-            exclude.add(nnbr[1])
+        # exclude = set()
+        # for i in range(n):
+        #     nnbr = self.tree.nearest_neighbor(point, exclude)
+        #     exclude.add(nnbr[1])
 
-        nnbr, label, dst = self.tree.nearest_neighbor(point, exclude)
-        if dst is not None:
-            if dst < distance:
-                return True
-        return False
+        # nnbr, label, dst = self.tree.nearest_neighbor(point, exclude)
+        # if dst is not None:
+        #     if dst < distance:
+        #         return True
+        # return False
+        pass
 
     def resample_polyline(self, length):
         try:
