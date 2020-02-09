@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 '''
  A routine that implements a K-means routine to cluster similar vectors.
 

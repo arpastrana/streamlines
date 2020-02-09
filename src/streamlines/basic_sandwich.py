@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 __name__ = "Basic Sandwich"
 __author__ = "Rafael Pastrana"
 __version__ = "0.0.2"

@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 '''
 A bunch of functions tailored to display a variety of Stream objects.
 '''

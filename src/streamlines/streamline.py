@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 '''
 A wrapper for a bunch of nodes with boid temperament.
 '''
