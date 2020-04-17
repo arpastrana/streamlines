@@ -184,7 +184,6 @@ if __name__ == '__main__':
 	not_umbilic_keys = list(str_mesh.c_mesh.faces_where_predicate(lambda f_key, attr: attr['label'] == 1))
 	umbilics = [str_mesh.c_mesh.face_centroid(fkey) for fkey in umbilic_keys]
 
-
 	# ==========================================================================
 	# Create closest-point seeds
 	# ==========================================================================
@@ -230,12 +229,13 @@ if __name__ == '__main__':
 
 	plotter = MeshPlotter(mesh, figsize=(12,9))
 	plotter.draw_faces(keys=umbilic_keys, facecolor=(255, 0, 0))
-	plotter.draw_faces(keys=not_umbilic_keys)
+	# plotter.draw_edges(color=(10, 10, 10))
+	# plotter.draw_faces(keys=not_umbilic_keys)
 	plotter.draw_lines(lines)
-	plotter.draw_points([{'pos': closest_pt, 'facecolor': (0, 255, 0), 'radius': 0.02},
-						{'pos': test_pt, 'facecolor': (0, 0, 255), 'radius': 0.02}
-						]
-						)
+	# plotter.draw_points([{'pos': closest_pt, 'facecolor': (0, 255, 0), 'radius': 0.02},
+	# 					{'pos': test_pt, 'facecolor': (0, 0, 255), 'radius': 0.02}
+	# 					]
+	# 					)
 
 	# plotter.draw_points(control_points)
 	plotter.draw_polylines(polylines)

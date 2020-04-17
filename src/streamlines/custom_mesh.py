@@ -91,6 +91,7 @@ class StructuralMesh():
         # self.c_mesh = helpers.mesh.mesh_from_guid(Mesh, gh_mesh)
         # self.gh_mesh = gh_mesh
         self.c_mesh = cmesh
+        self.cMesh = cmesh   # temp
 
         self.adj = None
         self.e_weights = None
