@@ -50,7 +50,7 @@ from streamlines.utilities import Utilities
 ut = Utilities()
 
 
-def k_means(clusters, faces, iters):
+def k_means(clusters, faces, iters, callback=None):
     '''
     2. Run for N given iterations only.
     1. Create Cluster Colors. Make global *counter*.
@@ -82,13 +82,16 @@ def k_means(clusters, faces, iters):
         if it < iters-1:
             clusters = merge_split(clusters)
 
+        if callback:
+            callback(k=it, clusters=clusters)
+
         e1 = time.time()
         print('Iteration {} execution time was {}'.format(it, (e1-s1)))
     print('End Clusters are: {}'.format(clusters))
     return all_clusters
 
 
-def furthest_init(num, faces):  # no dependency
+def furthest_init(num, faces, callback=None):  # no dependency
     print('#####')
     print('Furthest init started')
     s0 = time.time()
@@ -107,6 +110,9 @@ def furthest_init(num, faces):  # no dependency
         if i < num-1:
             t_s = get_cluster_to_split(clusters)
             clusters = split_cluster(t_s, clusters)
+
+        if callback:
+            callback(k=i, clusters=clusters)
 
         e0 = time.time()
 

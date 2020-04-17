@@ -1,3 +1,6 @@
+from time import time
+from functools import partial
+
 from compas.geometry import scale_vector
 from compas.geometry import add_vectors
 from compas.geometry import normalize_vector
@@ -76,6 +79,8 @@ if __name__ == '__main__':
 
     NUM = 7  # number of clusters
     ITERS = 50  # number of iterations
+    THERE = '/Users/arpj/code/libraries/streamlines/examples/gif/kmeans_{}_{}_'
+    THERE = THERE.format(NUM, ITERS)
 
     # ==========================================================================
     # Import mesh
@@ -89,7 +94,7 @@ if __name__ == '__main__':
     # Create PS vector lines
     # ==========================================================================
 
-    vector_tag = 'ps_1_bot'
+    vector_tag = 'ps_1_top'
     lines = vector_lines_on_faces(mesh, vector_tag, True, factor=0.05)
 
     lines = [line for line in map(line_tuple_to_dict, lines)]
@@ -108,6 +113,38 @@ if __name__ == '__main__':
         str_mesh.set_vertex_vectors_angles(tag)
 
     # ==========================================================================
+    # Define Callback
+    # ==========================================================================
+
+    def callback(k, plotter, clusters, filepath):
+        num = len(list(clusters.keys()))
+
+        facedict = {}
+
+        for idx, cluster in clusters.items():
+            color = [i / 255 for i in i_to_rgb(idx / num)]
+            for fkey in cluster.faces_keys:
+                facedict[fkey] = color
+
+        facecolors = sorted(facedict.items(),  key=lambda x: x[0])
+        facecolors = [x[1] for x in facecolors]
+        plotter.facecollection.set_facecolors(facecolors)
+
+        plotter.save(THERE + '{}_{}.png'.format(time(), k))
+        plotter.update(pause=0.5)
+
+    # ==========================================================================
+    # Set up Plotter
+    # ==========================================================================
+
+    plotter = MeshPlotter(mesh, figsize=(12, 9))
+    plotter.draw_lines(lines)
+    plotter.draw_faces()
+    plotter.update(pause=0.5)
+
+    callback = partial(callback, plotter=plotter, filepath=THERE)
+
+    # ==========================================================================
     # Set up K-Means algorithm
     # ==========================================================================
 
@@ -115,11 +152,11 @@ if __name__ == '__main__':
 
     print('faces made')
 
-    clusters = furthest_init(NUM, faces)
+    clusters = furthest_init(NUM, faces, callback)
 
     print('clusters made')
     sel_clusters = clusters[-1]
-    all_clusters = k_means(sel_clusters, faces, ITERS)
+    all_clusters = k_means(sel_clusters, faces, ITERS, callback)
 
     print('k means was run')
 
@@ -129,11 +166,14 @@ if __name__ == '__main__':
     # Visualization
     # ==========================================================================
 
-    plotter = MeshPlotter(mesh, figsize=(12, 9))
+    # plotter = MeshPlotter(mesh, figsize=(12, 9))
 
-    num = len(final_clusters)
-    for idx, cluster in final_clusters.items():
-        plotter.draw_faces(keys=cluster.faces_keys, facecolor=i_to_rgb(idx/num))
+    # num = len(final_clusters)
+    # for idx, cluster in final_clusters.items():
+    #     plotter.draw_faces(keys=cluster.faces_keys, facecolor=i_to_rgb(idx/num))
 
-    plotter.draw_lines(lines)
+    # plotter.draw_lines(lines)
+    # print('final show')
+    # plotter.clear_faces()
+    # plotter.update(pause=1.0)
     plotter.show()
