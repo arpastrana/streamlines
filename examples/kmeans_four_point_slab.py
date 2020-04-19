@@ -79,6 +79,7 @@ if __name__ == '__main__':
 
     NUM = 7  # number of clusters
     ITERS = 50  # number of iterations
+    MERGESPLIT = True  # merge split in k means. True is good for this example, but not for knitcandela!
     THERE = '/Users/arpj/code/libraries/streamlines/examples/gif/kmeans_{}_{}_'
     THERE = THERE.format(NUM, ITERS)
 
@@ -130,7 +131,7 @@ if __name__ == '__main__':
         facecolors = [x[1] for x in facecolors]
         plotter.facecollection.set_facecolors(facecolors)
 
-        plotter.save(THERE + '{}_{}.png'.format(time(), k))
+        # plotter.save(THERE + '{}_{}.png'.format(time(), k))
         plotter.update(pause=0.5)
 
     # ==========================================================================
@@ -149,16 +150,10 @@ if __name__ == '__main__':
     # ==========================================================================
 
     faces = make_faces(str_mesh, vector_tag, weight=False)
-
-    print('faces made')
-
     clusters = furthest_init(NUM, faces, callback)
-
-    print('clusters made')
+    
     sel_clusters = clusters[-1]
-    all_clusters = k_means(sel_clusters, faces, ITERS, callback)
-
-    print('k means was run')
+    all_clusters = k_means(sel_clusters, faces, ITERS, MERGESPLIT, calback=callback)
 
     final_clusters = all_clusters[-1]
 
@@ -166,14 +161,4 @@ if __name__ == '__main__':
     # Visualization
     # ==========================================================================
 
-    # plotter = MeshPlotter(mesh, figsize=(12, 9))
-
-    # num = len(final_clusters)
-    # for idx, cluster in final_clusters.items():
-    #     plotter.draw_faces(keys=cluster.faces_keys, facecolor=i_to_rgb(idx/num))
-
-    # plotter.draw_lines(lines)
-    # print('final show')
-    # plotter.clear_faces()
-    # plotter.update(pause=1.0)
     plotter.show()

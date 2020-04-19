@@ -50,7 +50,7 @@ from streamlines.utilities import Utilities
 ut = Utilities()
 
 
-def k_means(clusters, faces, iters, callback=None):
+def k_means(clusters, faces, iters, mergesplit=False, callback=None):
     '''
     2. Run for N given iterations only.
     1. Create Cluster Colors. Make global *counter*.
@@ -79,8 +79,9 @@ def k_means(clusters, faces, iters, callback=None):
         clusters = q.get_clusters()
         all_clusters.append(output_cls(clusters))
 
-        if it < iters-1:
-            clusters = merge_split(clusters)
+        if mergesplit:
+            if it < iters-1:
+                clusters = merge_split(clusters)
 
         if callback:
             callback(k=it, clusters=clusters)
