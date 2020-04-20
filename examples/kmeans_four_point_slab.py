@@ -77,11 +77,13 @@ if __name__ == '__main__':
         'custom_2'
         ]
 
-    NUM = 7  # number of clusters
-    ITERS = 50  # number of iterations
+    # (odd numbers only!) (after 11, starts to get confused!) but at 19, kind of works again
+    NUM = 21  # number of clusters 
+    ITERS = 60  # number of iterations
     MERGESPLIT = True  # merge split in k means. True is good for this example, but not for knitcandela!
-    THERE = '/Users/arpj/code/libraries/streamlines/examples/gif/kmeans_{}_{}_'
+    THERE = '/Users/arpj/code/libraries/streamlines/examples/gif_{0}_{1}/kmeans_{0}_{1}_'
     THERE = THERE.format(NUM, ITERS)
+    EXPORT_PNG = False
 
     # ==========================================================================
     # Import mesh
@@ -117,7 +119,7 @@ if __name__ == '__main__':
     # Define Callback
     # ==========================================================================
 
-    def callback(k, plotter, clusters, filepath):
+    def callback(k, plotter, clusters, filepath, export):
         num = len(list(clusters.keys()))
 
         facedict = {}
@@ -131,8 +133,9 @@ if __name__ == '__main__':
         facecolors = [x[1] for x in facecolors]
         plotter.facecollection.set_facecolors(facecolors)
 
-        # plotter.save(THERE + '{}_{}.png'.format(time(), k))
-        plotter.update(pause=0.5)
+        if export:
+            plotter.save(THERE + '{}_{}.png'.format(time(), k))
+        plotter.update(pause=0.50)
 
     # ==========================================================================
     # Set up Plotter
@@ -143,7 +146,7 @@ if __name__ == '__main__':
     plotter.draw_faces()
     plotter.update(pause=0.5)
 
-    callback = partial(callback, plotter=plotter, filepath=THERE)
+    callback = partial(callback, plotter=plotter, filepath=THERE, export=EXPORT_PNG)
 
     # ==========================================================================
     # Set up K-Means algorithm
@@ -153,7 +156,7 @@ if __name__ == '__main__':
     clusters = furthest_init(NUM, faces, callback)
     
     sel_clusters = clusters[-1]
-    all_clusters = k_means(sel_clusters, faces, ITERS, MERGESPLIT, calback=callback)
+    all_clusters = k_means(sel_clusters, faces, ITERS, MERGESPLIT, callback=callback)
 
     final_clusters = all_clusters[-1]
 

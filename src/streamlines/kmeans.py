@@ -29,8 +29,8 @@ I. Algorithm:
 
 __author__ = 'Rafael Pastrana'
 __name__ = 'K-Means Clustering'
-__version__ = '0.0.4'
-__date__ = '16.08.27'
+__version__ = '0.0.5'
+__date__ = '17.04.20'
 
 
 import heapq
@@ -79,7 +79,7 @@ def k_means(clusters, faces, iters, mergesplit=False, callback=None):
         clusters = q.get_clusters()
         all_clusters.append(output_cls(clusters))
 
-        if mergesplit:
+        if mergesplit is True:
             if it < iters-1:
                 clusters = merge_split(clusters)
 

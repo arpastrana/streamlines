@@ -3,8 +3,8 @@ import imageio
 from pygifsicle import optimize
 
 
-DIR = "./gif/"
-OUT_NAME = 'kmeans_7_50.gif'
+DIR = "./gif_14_50/"
+OUT_NAME = 'kmeans_14_50.gif'
 SUFFIX = ".png"
 LOOP = 0
 FPS = 4
