@@ -39,6 +39,7 @@ import math
 import random
 import time
 
+import numpy as np
 import compas.geometry as cg
 
 from functools import total_ordering
@@ -248,7 +249,7 @@ def execute_merge_split(t_m, t_s):
     dif = merged_err - to_merge_err
     worst_err = t_s.get_distortion()
 
-    if math.fabs(dif) < 0.5 * worst_err:
+    if math.fabs(dif) < 0.5 * worst_err:  # 0.5
         print('merge-split is True')
         return True
 
@@ -466,13 +467,18 @@ class Face():
     def set_neighbours(self, neighbours):
         self.neighbours = [n for n in neighbours if n is not None]
 
-    def get_error(self, proxy, area_weight=False):  # NEW
+    def get_error(self, proxy, area_weight=False):
         ali_vec = ut.align_vector(self.vector, proxy)
         difference = cg.subtract_vectors(ali_vec, proxy)
-        if area_weight is True:
-            error = self.area * cg.length_vector_sqrd(difference)
-        else:
-            error = cg.length_vector_sqrd(difference)
+
+        # error = cg.length_vector_sqrd(difference)  # original
+        error = cg.length_vector(difference)
+
+        # error = cg.angle_vectors(ali_vec, proxy)
+        # error = error ** 2
+        
+        # if area_weight is True:
+        #     error = self.area * cg.length_vector_sqrd(difference)
 
         # do something about weights
         # w_1 = 0.3
