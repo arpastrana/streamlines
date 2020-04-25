@@ -136,7 +136,7 @@ def get_new_clusters(clusters, faces):
 
     for key, cluster in clusters.items():
         cluster.harvest_faces(faces)
-        cluster.set_vector_proxy()
+        cluster.set_proxy()
 
         n_cluster = Cluster(cluster.id, cluster.get_new_seed())
         n_clusters[n_cluster.id] = n_cluster
@@ -165,10 +165,12 @@ def get_random_colors(values):
     return list(map(get_random_color, values))
 
 
-def make_faces(s_mesh, tag, weight=False):  # no dep
+def make_faces(s_mesh, tag, keys=None, weight=False):  # no dep
     faces = {}
 
-    for f_key in s_mesh.cMesh.faces():
+    keys = keys or s_mesh.c_mesh.faces()
+
+    for f_key in keys:
         face = Face(f_key)
         halfedges = s_mesh.cMesh.face_halfedges(f_key)
         vector = s_mesh.cMesh.get_face_attribute(f_key, tag)
@@ -180,6 +182,7 @@ def make_faces(s_mesh, tag, weight=False):  # no dep
 
         face.set_vector(vector)
         face.set_weighed_vector(weight)
+        face.set_angle(vector)
 
         faces[f_key] = face
 
@@ -208,8 +211,8 @@ def get_cluster_to_split(clusters):
 
 def simulate_merge(cluster_1, cluster_2):
     t_faces = set(cluster_1.faces + cluster_2.faces)
-    errors = get_errors(t_faces, get_proxy(t_faces))
-    return get_distortion(errors)
+    e = errors(t_faces, get_proxy(t_faces))
+    return distortion(e)
 
 
 def merge_clusters(t_m, clusters):
@@ -249,7 +252,7 @@ def execute_merge_split(t_m, t_s):
     dif = merged_err - to_merge_err
     worst_err = t_s.get_distortion()
 
-    if math.fabs(dif) < 0.5 * worst_err:  # 0.5
+    if math.fabs(dif) < 0.50 * worst_err:  # 0.5, not squared
         print('merge-split is True')
         return True
 
@@ -259,18 +262,35 @@ def execute_merge_split(t_m, t_s):
 
 
 def get_proxy(faces):
-    w_ve = [face.w_vector for face in faces]
+    # return get_proxy_angle(faces)
+    return get_proxy_vector(faces)
+
+
+def get_proxy_angle(faces):
+    angles = [face.angle for face in faces]
+    return proxy_maker(angles)
+
+
+def get_proxy_vector(faces):
+    w_ve = [face.vector for face in faces]
     w_ve = list(map(lambda x: ut.align_vector(x, w_ve[0]), w_ve))
     r_ve = reduce(lambda x, y: cg.add_vectors(x, y), w_ve)
     return cg.normalize_vector(r_ve)
 
 
-def get_errors(faces, proxy):
+def proxy_maker(values):
+    #return np.mean(values)  # mean, median?
+    return np.mean(values, axis=1)  # mean, median?
+
+
+def errors(faces, proxy):
     return [face.get_error(proxy) for face in faces]
 
 
-def get_distortion(errors):
-    return reduce(lambda x, y: x+y, errors)
+def distortion(errors):
+    # return reduce(lambda x, y: x+y, errors)
+    return np.mean(np.array(errors) ** 2)
+    # return np.sum(np.array(errors))
 
 
 class Queue():
@@ -283,7 +303,7 @@ class Queue():
     def init_queue(self):
         for c_key, cluster in self.clusters.items():
             cluster.add_seed(self.faces)
-            cluster.set_vector_proxy()
+            cluster.set_proxy()
             n_faces = self.get_neighbour_faces(cluster.seed)
             self.update_queue(n_faces, c_key)
 
@@ -312,7 +332,7 @@ class Queue():
 
     def get_clusters(self):
         for ckey, cluster in self.clusters.items():
-            cluster.set_vector_proxy()
+            cluster.set_proxy()
             cluster.set_distortion()
         return self.clusters
 
@@ -332,12 +352,12 @@ class Cluster():
     def remove_face(self, fkey):
         self.faces_keys = [k for k in self.faces_keys if k != int(fkey)]
         self.faces = [f for f in self.faces if f.fkey != fkey]
-        self.set_vector_proxy()
+        self.set_proxy()
 
     def absorb_cluster(self, other_cluster):
         for o_face in other_cluster.faces:
             self.add_face(o_face)
-        self.set_vector_proxy()
+        self.set_proxy()
         self.set_faces_in_cluster()
 
     def copy_cluster(self, other_cluster):
@@ -370,25 +390,32 @@ class Cluster():
     def get_vectors(self):
         return [face.vector for face in self.faces]
 
+    def get_angles(self):
+        return [face.angle for face in self.faces]        
+
     def set_faces_in_cluster(self):
         for face in self.faces:
             face.cluster = self.id
 
-    def set_vector_proxy_normal(self):  # NORMAL
-        w_ve = self.get_weighed_vectors()
-        r_ve = reduce(lambda x, y: cg.add_vectors(x, y), w_ve)
-        self.proxy = cg.normalize_vector(r_ve)
+    def set_proxy(self):
+        func = self.set_vector_proxy
+        # func = self.set_angle_proxy
+        return func()
 
     def set_vector_proxy(self):  # NEW
-        w_ve = self.get_weighed_vectors()
+        w_ve = self.get_vectors()
         w_ve = list(map(lambda x: ut.align_vector(x, w_ve[0]), w_ve))
         r_ve = reduce(lambda x, y: cg.add_vectors(x, y), w_ve)
         self.proxy = cg.normalize_vector(r_ve)
 
+    def set_angle_proxy(self):
+        angles = self.get_angles()
+        self.proxy = proxy_maker(angles)  # average...median?
+
     def get_errors(self):
         return [face.get_error(self.proxy) for face in self.faces]
 
-    def get_new_seed(self):  # to improve timing
+    def get_new_seed(self):
         return min(self.faces, key=lambda x: x.get_error(self.proxy)).fkey
 
     def get_worst_seed(self):
@@ -415,7 +442,10 @@ class Cluster():
         self.faces[:] = []
 
     def get_distortion(self):
-        return reduce(lambda x, y: x+y, self.get_errors())
+        # return reduce(lambda x, y: x+y, self.get_errors())
+        # return np.mean(self.get_errors())
+        return distortion(self.get_errors())
+        # return np.sum(self.get_errors())
 
     def set_distortion(self):
         self.distortion = self.get_distortion()
@@ -424,7 +454,8 @@ class Cluster():
         f = len(self.faces)
         fk = len(self.faces_keys)
         s = self.seed
-        return 'id:{0} seed:{1} faces:{2}, keys:{3}'.format(self.id, s, f, fk)
+        dst = self.distortion
+        return 'id:{0} seed:{1} distortion:{4} faces:{2}, keys:{3}'.format(self.id, s, f, fk, dst)
 
 
 class Face():
@@ -439,6 +470,7 @@ class Face():
         self.area = None
         self.neighbours = None
         self.error = None
+        self.angle = None
 
         self.cluster = None
 
@@ -461,22 +493,29 @@ class Face():
         else:
             self.w_vector = self.vector
 
+    def set_angle(self, vector):
+        angle = cg.angle_vectors([1.0, 0.0, 0.0], vector, deg=True)
+        if angle > 90.0:
+            angle = 180.0 - angle
+        self.angle = angle
+
     def set_area(self, area):
         self.area = area
 
     def set_neighbours(self, neighbours):
         self.neighbours = [n for n in neighbours if n is not None]
 
-    def get_error(self, proxy, area_weight=False):
+    def get_error(self, proxy):
+        func = self.get_error_vector
+        # func = self.get_error_angle
+        return func(proxy)
+
+    def get_error_vector(self, proxy, area_weight=False):
         ali_vec = ut.align_vector(self.vector, proxy)
         difference = cg.subtract_vectors(ali_vec, proxy)
+        error = cg.length_vector_sqrd(difference)  # original
 
-        # error = cg.length_vector_sqrd(difference)  # original
-        error = cg.length_vector(difference)
-
-        # error = cg.angle_vectors(ali_vec, proxy)
-        # error = error ** 2
-        
+        # error = cg.length_vector(difference)
         # if area_weight is True:
         #     error = self.area * cg.length_vector_sqrd(difference)
 
@@ -484,7 +523,12 @@ class Face():
         # w_1 = 0.3
         # w_2 = 0.7
         # w_error = w_1 * error + w_2 * self.vector_length
+        return error
 
+    def get_error_angle(self, proxy):
+        error = math.fabs(self.angle - proxy)
+        if error > 90.0:
+            error = 180.0 - error
         return error
 
     def set_error(self, proxy):  # NEW
