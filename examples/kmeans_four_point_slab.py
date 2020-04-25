@@ -78,8 +78,8 @@ if __name__ == '__main__':
         ]
 
     # (odd numbers only!) (after 11, starts to get confused!) but at 19, kind of works again
-    NUM = 7  # number of clusters 
-    ITERS = 60  # number of iterations
+    NUM = 19  # number of clusters 
+    ITERS = 50  # number of iterations
     MERGESPLIT = False  # merge split in k means. True is good for this example, but not for knitcandela!
     THERE = '/Users/arpj/code/libraries/streamlines/examples/gif_{0}_{1}/kmeans_{0}_{1}_'
     THERE = THERE.format(NUM, ITERS)

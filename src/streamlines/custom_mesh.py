@@ -101,10 +101,9 @@ class StructuralMesh():
             compas.topology.mesh_unify_cycles(self.c_mesh, root=None)
 
         self.set_face_planes()
-        self.set_edge_planes()
-        self.set_adjacency()
-        self.set_avg_edge_length()
-        # self.set_dijkstra_distances()
+        # self.set_edge_planes()
+        # self.set_adjacency()
+        # self.set_avg_edge_length()
 
     def set_avg_edge_length(self):
         lengths = [self.c_mesh.edge_length(u, v) for u, v in self.c_mesh.edges()]
