@@ -66,10 +66,10 @@ def k_means(clusters, faces, iters, mergesplit=False, callback=None):
     9. Repeat
     '''
     all_clusters = []
-    print('seeds are: {}'.format([cl.seed for cl_key, cl in clusters.items()]))
+    # print('seeds are: {}'.format([cl.seed for cl_key, cl in clusters.items()]))
 
     for it in range(iters):
-        print('#####')
+        # print('#####')
         s1 = time.time()
 
         new_clusters, new_faces = get_new_clusters(clusters, faces)
@@ -88,14 +88,14 @@ def k_means(clusters, faces, iters, mergesplit=False, callback=None):
             callback(k=it, clusters=clusters)
 
         e1 = time.time()
-        print('Iteration {} execution time was {}'.format(it, (e1-s1)))
-    print('End Clusters are: {}'.format(clusters))
+        # print('Iteration {} execution time was {}'.format(it, (e1-s1)))
+    # print('End Clusters are: {}'.format(clusters))
     return all_clusters
 
 
 def furthest_init(num, faces, callback=None):  # no dependency
-    print('#####')
-    print('Furthest init started')
+    # print('#####')
+    # print('Furthest init started')
     s0 = time.time()
     clusters = {0: Cluster(0, 0)}
     all_clusters = []
@@ -118,7 +118,7 @@ def furthest_init(num, faces, callback=None):  # no dependency
 
         e0 = time.time()
 
-    print('Furthest init execution time was {}'.format(e0-s0))
+    # print('Furthest init execution time was {}'.format(e0-s0))
     return all_clusters
 
 

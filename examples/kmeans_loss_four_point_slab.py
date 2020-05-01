@@ -1,3 +1,5 @@
+import compas.geometry as cg
+
 from time import time
 from functools import partial
 
@@ -56,6 +58,10 @@ if __name__ == '__main__':
     from streamlines.kmeans import furthest_init
     from streamlines.kmeans import k_means
 
+    from streamlines.utilities import Utilities
+
+    ut = Utilities()
+
     # ==========================================================================
     # Constants
     # ==========================================================================
@@ -78,12 +84,10 @@ if __name__ == '__main__':
         ]
 
     # (odd numbers only!) (after 11, starts to get confused!) but at 19, kind of works again
-    NUM = 10  # number of clusters 
-    ITERS = 30  # number of iterations
-    MERGESPLIT = True  # merge split in k means. True is good for this example, but not for knitcandela!
-    THERE = '/Users/arpj/code/libraries/streamlines/examples/gif_{0}_{1}/kmeans_{0}_{1}_'
-    THERE = THERE.format(NUM, ITERS)
-    EXPORT_PNG = False
+    
+    # THERE = '/Users/arpj/code/libraries/streamlines/examples/gif_{0}_{1}/kmeans_{0}_{1}_'
+    # THERE = THERE.format(NUM, ITERS)
+    # EXPORT_PNG = False
 
     # ==========================================================================
     # Import mesh
@@ -119,49 +123,92 @@ if __name__ == '__main__':
     # Define Callback
     # ==========================================================================
 
-    def callback(k, plotter, clusters, filepath, export):
-        num = len(list(clusters.keys()))
+    # def callback(k, plotter, clusters, filepath, export):
+    #     num = len(list(clusters.keys()))
 
-        facedict = {}
+    #     facedict = {}
 
-        for idx, cluster in clusters.items():
-            color = [i / 255 for i in i_to_rgb(idx / num)]
-            for fkey in cluster.faces_keys:
-                facedict[fkey] = color
+    #     for idx, cluster in clusters.items():
+    #         color = [i / 255 for i in i_to_rgb(idx / num)]
+    #         for fkey in cluster.faces_keys:
+    #             facedict[fkey] = color
 
-        facecolors = sorted(facedict.items(),  key=lambda x: x[0])
-        facecolors = [x[1] for x in facecolors]
-        plotter.facecollection.set_facecolors(facecolors)
+    #     facecolors = sorted(facedict.items(),  key=lambda x: x[0])
+    #     facecolors = [x[1] for x in facecolors]
+    #     plotter.facecollection.set_facecolors(facecolors)
 
-        if export:
-            plotter.save(THERE + '{}_{}.png'.format(time(), k))
-        plotter.update(pause=0.50)
+    #     if export:
+    #         plotter.save(THERE + '{}_{}.png'.format(time(), k))
+    #     plotter.update(pause=0.50)
 
     # ==========================================================================
     # Set up Plotter
     # ==========================================================================
 
-    plotter = MeshPlotter(mesh, figsize=(12, 9))
-    plotter.draw_lines(lines)
-    plotter.draw_faces()
-    plotter.update(pause=0.5)
+    # plotter = MeshPlotter(mesh, figsize=(12, 9))
+    # plotter.draw_lines(lines)
+    # plotter.draw_faces()
+    # plotter.update(pause=0.5)
 
-    callback = partial(callback, plotter=plotter, filepath=THERE, export=EXPORT_PNG)
+    # callback = partial(callback, plotter=plotter, filepath=THERE, export=EXPORT_PNG)
 
     # ==========================================================================
     # Set up K-Means algorithm
     # ==========================================================================
 
-    faces = make_faces(str_mesh, vector_tag, weight=False)
-    clusters = furthest_init(NUM, faces, callback)
+
+    # define loss file
+    errors = []
+
+    # NUM = 5  # number of clusters 
+    TEST_RANGE = 100
+    ITERS = 30  # number of iterations
+    MERGESPLIT = False  # merge split in k means. True is good for this example, but not for knitcandela!
+
+    for num in range(1, TEST_RANGE):
+        print('num clusters: ', num)
     
-    sel_clusters = clusters[-1]
-    all_clusters = k_means(sel_clusters, faces, ITERS, MERGESPLIT, callback=callback)
+        faces = make_faces(str_mesh, vector_tag, weight=False)
+        clusters = furthest_init(num, faces)
+    
+        sel_clusters = clusters[-1]
+        all_clusters = k_means(sel_clusters, faces, ITERS, MERGESPLIT)
+        final_clusters = all_clusters[-1]
 
-    final_clusters = all_clusters[-1]
 
+        error = 0.0
+        for idx, cluster in final_clusters.items():
+            proxy = normalize_vector(cluster.proxy)
+            fkeys = cluster.faces_keys
+
+            for fkey in fkeys:
+                vector = str_mesh.cMesh.get_face_attribute(fkey, vector_tag)
+                vector = normalize_vector(vector)
+                ali_vec = ut.align_vector(vector, proxy)
+                difference = cg.subtract_vectors(ali_vec, proxy)
+                _error = cg.length_vector_sqrd(difference)  # original
+
+            # for face in faces:
+            #     error += face.get_error()
+
+                error += _error
+        
+        print('error', error)
+        error /= mesh.number_of_faces()
+        print('error', error)
+        errors.append(error)
+    
+    with open('errors.txt', 'w') as f:
+        for e in errors:
+            f.write(str(e))
+            f.write('\n')
+
+    import matplotlib.pyplot as plt
+
+    plt.plot(errors)
+    plt.show()
     # ==========================================================================
     # Visualization
     # ==========================================================================
 
-    plotter.show()
+    # plotter.show()
