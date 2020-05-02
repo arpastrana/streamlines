@@ -68,7 +68,7 @@ vector_tag_2 = 'ps_2_top'
 vector_tag = 'ps_1_2_top' # bisector
 vector_tag = vector_tag_1
 
-smooth_iters = 50
+smooth_iters = 100
 n_clusters = 4
 sigma = 2.0
 
@@ -143,11 +143,46 @@ for _ in range(smooth_iters):
 # Create PS vector lines
 # ==========================================================================
 
+# angles = {}
+# centroids = {}
+# for fkey, attr in mesh.faces(data=True):
+# 	vector = attr.get(vector_tag)
+# 	angle = angle_vectors([1.0, 0.0, 0.0], vector, deg=True)
+# 	angles[fkey] = angle
+# 	centroids[fkey] = np.array(mesh.face_centroid(fkey))
+
+
+# print('max angle', min(angles.values()))
+# print('min angle', max(angles.values()))
+
+# for idx, angle in angles.items():
+# 	if angle <= 90.0:
+# 		continue
+# 	angles[idx] = 180.0 - angle
+
+# print('max angle', min(angles.values()))
+# print('min angle', max(angles.values()))
+
+# anglemax = max(angles.values())
+# colors = {}
+# for idx, angle in angles.items():
+# 	color = i_to_rgb(angle / anglemax)
+# 	colors[idx] = color
+
+# vectors = {}
+# for fkey, angle in angles.items():
+# 	y = 1.0 / math.tan(math.radians(angle))
+# 	x_vec = [1.0, 0.0, 0.0]
+# 	y_vec = [0.0, y, 0.0]
+# 	vec = normalize_vector(add_vectors(x_vec, y_vec))
+# 	vectors[fkey] = vec
+
 angles = {}
 centroids = {}
 for fkey, attr in mesh.faces(data=True):
 	vector = attr.get(vector_tag)
-	angle = angle_vectors([1.0, 0.0, 0.0], vector, deg=True)
+	# angle = angle_vectors([1.0, 0.0, 0.0], vector, deg=True)
+	angle = angle_vectors([1.0, 1.0, 0.0], vector, deg=True)
 	angles[fkey] = angle
 	centroids[fkey] = np.array(mesh.face_centroid(fkey))
 
@@ -156,9 +191,14 @@ print('max angle', min(angles.values()))
 print('min angle', max(angles.values()))
 
 for idx, angle in angles.items():
-	if angle <= 90.0:
-		continue
-	angles[idx] = 180.0 - angle
+	if angle >= 90.0:
+		angle = 180.0 - angle
+	angles[idx] = angle
+
+for idx, angle in angles.items():
+	if angle >= 45:
+		angle = 90.0 - angle
+	angles[idx] = angle
 
 print('max angle', min(angles.values()))
 print('min angle', max(angles.values()))
@@ -168,14 +208,6 @@ colors = {}
 for idx, angle in angles.items():
 	color = i_to_rgb(angle / anglemax)
 	colors[idx] = color
-
-vectors = {}
-for fkey, angle in angles.items():
-	y = 1.0 / math.tan(math.radians(angle))
-	x_vec = [1.0, 0.0, 0.0]
-	y_vec = [0.0, y, 0.0]
-	vec = normalize_vector(add_vectors(x_vec, y_vec))
-	vectors[fkey] = vec
 
 # ==========================================================================
 # Create Face Adjacency Network - keys from 0 to N!
@@ -294,18 +326,18 @@ print('heated up')
 # Scipy Spectral Clustering 
 # ==========================================================================
 
-# print('spectral clustering...')  # has worked best so fa r(roundish clusters)
-# clustering = SpectralClustering(n_clusters=n_clusters, affinity="nearest_neighbors", assign_labels='discretize')
-# print('fitting...')
-# clustering.fit(X)
-# print('fit')
-
-print('spectral clustering...')
-# A = kneighbors_graph(X, n_neighbors=5).toarray()
-clustering = SpectralClustering(n_clusters=n_clusters, affinity="precomputed")
+print('spectral clustering...')  # has worked best so fa r(roundish clusters)
+clustering = SpectralClustering(n_clusters=n_clusters, affinity="nearest_neighbors", assign_labels='discretize')
 print('fitting...')
-clustering.fit(A)
+clustering.fit(X)
 print('fit')
+
+# print('spectral clustering...')
+# # A = kneighbors_graph(X, n_neighbors=5).toarray()
+# clustering = SpectralClustering(n_clusters=n_clusters, affinity="precomputed")
+# print('fitting...')
+# clustering.fit(A)
+# print('fit')
 
 # print('AgglomerativeClustering...')
 # A = kneighbors_graph(X, n_neighbors=n_clusters, include_self=False)

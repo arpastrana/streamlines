@@ -1,3 +1,6 @@
+import math
+
+from random import choice
 from time import time
 from functools import partial
 
@@ -5,6 +8,7 @@ from compas.geometry import scale_vector
 from compas.geometry import add_vectors
 from compas.geometry import normalize_vector
 from compas.geometry import length_vector
+from compas.geometry import cross_vectors
 
 
 def vector_lines_on_faces(mesh, vector_tag, uniform=True, factor=0.02):
@@ -47,6 +51,7 @@ if __name__ == '__main__':
     from compas.datastructures import mesh_unify_cycles
 
     from compas.utilities import i_to_rgb
+    from compas.utilities import i_to_black
 
     from compas_plotters import MeshPlotter
 
@@ -78,12 +83,17 @@ if __name__ == '__main__':
         ]
 
     # (odd numbers only!) (after 11, starts to get confused!) but at 19, kind of works again
-    NUM = 10  # number of clusters 
+    NUM = 13  # number of clusters 
     ITERS = 30  # number of iterations
     MERGESPLIT = True  # merge split in k means. True is good for this example, but not for knitcandela!
+    EXPORT_PNG = False
+
     THERE = '/Users/arpj/code/libraries/streamlines/examples/gif_{0}_{1}/kmeans_{0}_{1}_'
     THERE = THERE.format(NUM, ITERS)
-    EXPORT_PNG = False
+
+    vector_tag_1 = 'ps_1_top'  # ps_1_top
+    vector_tag_2 = 'ps_2_top'  # ps_1_top
+    vector_tag = 'ps_12_top'  # ps_1_top
 
     # ==========================================================================
     # Import mesh
@@ -94,10 +104,52 @@ if __name__ == '__main__':
     mesh_unify_cycles(mesh)
 
     # ==========================================================================
+    # rebuild mesh
+    # ==========================================================================
+
+    # new_mesh = Mesh()
+
+    # all_vertices = set()
+    # for idx, tup in enumerate(mesh.faces(True)):
+    #     fkey, attr = tup
+
+    #     # 4.5 x 6.0 m rectancle
+    #     if mesh.face_centroid(fkey)[0] < -0.05:  # x - mesh deleter by symmetry
+    #         continue
+    #     if mesh.face_centroid(fkey)[1] < 0.:  # y - mesh deleter by symmetry
+    #         continue
+
+    #     attr_dict = {k:v for k, v in attr.items()}
+    #     face = mesh.face_vertices(fkey)
+    #     new_mesh.add_face(key=idx, vertices=face, attr_dict=attr_dict)
+    #     all_vertices.update(face)
+
+    # for vkey, attr in mesh.vertices(True):
+    #     if vkey not in all_vertices:
+    #         continue
+    #     attr_dict = {k:v for k, v in attr.items()}
+    #     new_mesh.add_vertex(vkey, attr_dict=attr_dict)
+
+    # mesh = new_mesh
+
+    # ==========================================================================
+    # 45 degrees field
+    # ==========================================================================
+
+    for fkey, attr in mesh.faces(True):
+        vec_1 = attr[vector_tag_1]
+        y = 1.0 / math.tan(math.radians(45.0))
+        x_vec = vec_1
+        y_vec = cross_vectors(x_vec, [0.0, 0.0, 1.0])  # global Z
+        y_vec = scale_vector(y_vec, y)
+        vec_3 = normalize_vector(add_vectors(x_vec, y_vec))
+        
+        mesh.set_face_attribute(fkey, name=vector_tag, value=vec_3)
+
+    # ==========================================================================
     # Create PS vector lines
     # ==========================================================================
 
-    vector_tag = 'ps_1_top'
     lines = vector_lines_on_faces(mesh, vector_tag, True, factor=0.05)
 
     lines = [line for line in map(line_tuple_to_dict, lines)]
@@ -144,7 +196,7 @@ if __name__ == '__main__':
     plotter = MeshPlotter(mesh, figsize=(12, 9))
     plotter.draw_lines(lines)
     plotter.draw_faces()
-    plotter.update(pause=0.5)
+    # plotter.update(pause=0.5)
 
     callback = partial(callback, plotter=plotter, filepath=THERE, export=EXPORT_PNG)
 
@@ -153,15 +205,16 @@ if __name__ == '__main__':
     # ==========================================================================
 
     faces = make_faces(str_mesh, vector_tag, weight=False)
-    clusters = furthest_init(NUM, faces, callback)
+    clusters = furthest_init(NUM, faces, callback=None)
     
     sel_clusters = clusters[-1]
-    all_clusters = k_means(sel_clusters, faces, ITERS, MERGESPLIT, callback=callback)
+    all_clusters = k_means(sel_clusters, faces, ITERS, MERGESPLIT, callback=None)
 
     final_clusters = all_clusters[-1]
 
+    callback(1, clusters=final_clusters)
     # ==========================================================================
     # Visualization
     # ==========================================================================
-
+    plotter.update(pause=0.5)
     plotter.show()

@@ -279,8 +279,7 @@ def get_proxy_vector(faces):
 
 
 def proxy_maker(values):
-    #return np.mean(values)  # mean, median?
-    return np.mean(values, axis=1)  # mean, median?
+    return np.mean(values)  # mean, median?
 
 
 def errors(faces, proxy):
@@ -507,7 +506,7 @@ class Face():
 
     def get_error(self, proxy):
         func = self.get_error_vector
-        # func = self.get_error_angle
+        # func = self.get_error_angle
         return func(proxy)
 
     def get_error_vector(self, proxy, area_weight=False):
@@ -528,7 +527,9 @@ class Face():
     def get_error_angle(self, proxy):
         error = math.fabs(self.angle - proxy)
         if error > 90.0:
-            error = 180.0 - error
+            error = math.fabs(180.0 - error)
+        if error > 45:
+            error = math.fabs(90.0 - error)
         return error
 
     def set_error(self, proxy):  # NEW

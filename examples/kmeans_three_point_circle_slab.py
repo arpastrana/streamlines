@@ -89,7 +89,7 @@ if __name__ == '__main__':
         ]
 
     # (odd numbers only!) (after 11, starts to get confused!) but at 19, kind of works again
-    NUM = 4  # number of clusters 
+    NUM = 12  # number of clusters 
     ITERS = 50  # number of iterations
     MERGESPLIT = True  # merge split in k means. True is good for this example, but not for knitcandela!
     THERE = '/Users/arpj/code/libraries/streamlines/examples/gif_{0}_{1}/kmeans_{0}_{1}_'
@@ -99,8 +99,7 @@ if __name__ == '__main__':
     vector_tag_1 = 'ps_1_top'
     vector_tag_2 = 'ps_2_top'
     vector_tag = 'ps_1_2_top' # bisector
-    vector_tag = 'ps_1_top'
-    smooth_iters = 50
+    smooth_iters = 0
 
     # ==========================================================================
     # Import mesh
@@ -146,16 +145,16 @@ if __name__ == '__main__':
     # 45 degrees field
     # ==========================================================================
 
-    # for fkey, attr in mesh.faces(True):
-    #     vec_1 = attr[vector_tag_1]
+    for fkey, attr in mesh.faces(True):
+        vec_1 = attr[vector_tag_1]
 
-    #     y = 1.0 / math.tan(math.radians(45.0))
-    #     x_vec = vec_1
-    #     y_vec = cross_vectors(x_vec, [0.0, 0.0, 1.0])  # global Z
-    #     y_vec = scale_vector(y_vec, y)
-    #     vec_3 = normalize_vector(add_vectors(x_vec, y_vec))
+        y = 1.0 / math.tan(math.radians(45.0))
+        x_vec = vec_1
+        y_vec = cross_vectors(x_vec, [0.0, 0.0, 1.0])  # global Z
+        y_vec = scale_vector(y_vec, y)
+        vec_3 = normalize_vector(add_vectors(x_vec, y_vec))
         
-    #     mesh.set_face_attribute(fkey, name=vector_tag, value=vec_3)
+        mesh.set_face_attribute(fkey, name=vector_tag, value=vec_3)
 
     # ==========================================================================
     # Average vector field
