@@ -17,7 +17,7 @@ import compas_rhino
 
 from compas.datastructures import Mesh
 from compas import geometry as cg
-from compas_rhino import helpers
+
 
 from math import degrees
 from math import acos
@@ -34,6 +34,7 @@ from functools import reduce
 
 try:
     import rhinoscriptsyntax as rs
+    from compas_rhino import helpers
 except:
     if compas.IPY:
         raise

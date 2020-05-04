@@ -90,7 +90,7 @@ if __name__ == '__main__':
         ]
 
     # (odd numbers only!) (after 11, starts to get confused!) but at 19, kind of works again
-    NUM = 5  # number of clusters 
+    NUM = 13  # number of clusters 
     ITERS = 30  # number of iterations
     MERGESPLIT = True  # merge split in k means. True is good for this example, but not for knitcandela!
     EXPORT_PNG = False
@@ -101,84 +101,78 @@ if __name__ == '__main__':
     vector_tag_1 = 'ps_1_top'  # ps_1_top
     vector_tag_2 = 'ps_2_top'  # ps_1_top
     vector_tag = 'ps_12_top'  # ps_1_top
+    vector_tag = vector_tag_1
     smooth_iters = 0
 
     # ==========================================================================
     # Import mesh
     # ==========================================================================
 
-    # mesh = Mesh()
-    # mesh.load(HERE)
     mesh = Mesh.from_json(HERE)
-    for fkey in mesh.faces():
-        print(mesh.face_attributes(key=fkey))
-    # print(mesh.faces_attributes(keys=mesh.faces()))
     # mesh_unify_cycles(mesh)
-    # mesh.to_json('/Users/arpj/Desktop/fps.json')
 
     # ==========================================================================
     # rebuild mesh
     # ==========================================================================
 
-    # new_mesh = Mesh()
+    new_mesh = Mesh()
 
-    # all_vertices = set()
-    # for idx, tup in enumerate(mesh.faces(True)):
-    #     fkey, attr = tup
+    all_vertices = set()
+    for idx, tup in enumerate(mesh.faces(True)):
+        fkey, attr = tup
 
-    #     # 4.5 x 6.0 m rectancle
-    #     if mesh.face_centroid(fkey)[0] < -0.05:  # x - mesh deleter by symmetry
-    #         continue
-    #     if mesh.face_centroid(fkey)[1] < 0.:  # y - mesh deleter by symmetry
-    #         continue
+        # 4.5 x 6.0 m rectancle
+        # if mesh.face_centroid(fkey)[0] < -0.05:  # x - mesh deleter by symmetry
+        #     continue
+        # if mesh.face_centroid(fkey)[1] < 0.:  # y - mesh deleter by symmetry
+        #     continue
 
-    #     attr_dict = {k:v for k, v in attr.items()}
-    #     face = mesh.face_vertices(fkey)
-    #     new_mesh.add_face(key=idx, vertices=face, attr_dict=attr_dict)
-    #     all_vertices.update(face)
+        attr_dict = {k:v for k, v in attr.items()}
+        face = mesh.face_vertices(fkey)
+        new_mesh.add_face(key=idx, vertices=face, attr_dict=attr_dict)
+        all_vertices.update(face)
 
-    # for vkey, attr in mesh.vertices(True):
-    #     if vkey not in all_vertices:
-    #         continue
-    #     attr_dict = {k:v for k, v in attr.items()}
-    #     new_mesh.add_vertex(vkey, attr_dict=attr_dict)
+    for vkey, attr in mesh.vertices(True):
+        if vkey not in all_vertices:
+            continue
+        attr_dict = {k:v for k, v in attr.items()}
+        new_mesh.add_vertex(vkey, attr_dict=attr_dict)
 
-    # mesh = new_mesh
+    mesh = new_mesh
 
     # ==========================================================================
     # Average smooth vector field
     # ==========================================================================
 
-    for _ in range(smooth_iters):
-        averaged_vectors = {}
-        for fkey in mesh.faces():
-            nbrs = mesh.face_neighbors(fkey)
-            vectors = mesh.get_faces_attribute(keys=nbrs, name=vector_tag_1)
-            vectors.append(mesh.get_face_attribute(fkey, name=vector_tag_1))
+    # for _ in range(smooth_iters):
+    #     averaged_vectors = {}
+    #     for fkey in mesh.faces():
+    #         nbrs = mesh.face_neighbors(fkey)
+    #         vectors = mesh.get_faces_attribute(keys=nbrs, name=vector_tag_1)
+    #         vectors.append(mesh.get_face_attribute(fkey, name=vector_tag_1))
 
-            vectors = list(map(lambda x: ut.align_vector(x, vectors[0]), vectors))
+    #         vectors = list(map(lambda x: ut.align_vector(x, vectors[0]), vectors))
 
-            vectors = np.array(vectors)
-            avg_vector = np.mean(vectors, axis=0).tolist()
-            averaged_vectors[fkey] = avg_vector
+    #         vectors = np.array(vectors)
+    #         avg_vector = np.mean(vectors, axis=0).tolist()
+    #         averaged_vectors[fkey] = avg_vector
 
-        for fkey in mesh.faces():
-            mesh.set_face_attribute(fkey, name=vector_tag_1, value=averaged_vectors[fkey])
+    #     for fkey in mesh.faces():
+    #         mesh.set_face_attribute(fkey, name=vector_tag_1, value=averaged_vectors[fkey])
 
     # ==========================================================================
     # 45 degrees field
     # ==========================================================================
 
-    for fkey, attr in mesh.faces(True):
-        print(attr)
-        vec_1 = attr[vector_tag_1]
-        y = 1.0 / math.tan(math.radians(45.0))
-        x_vec = vec_1
-        y_vec = cross_vectors(x_vec, [0.0, 0.0, 1.0])  # global Z
-        y_vec = scale_vector(y_vec, y)
-        vec_3 = normalize_vector(add_vectors(x_vec, y_vec))
+    # for fkey, attr in mesh.faces(True):
+    #     vec_1 = attr[vector_tag_1]
+    #     y = 1.0 / math.tan(math.radians(45.0))
+    #     x_vec = vec_1
+    #     y_vec = cross_vectors(x_vec, [0.0, 0.0, 1.0])  # global Z
+    #     y_vec = scale_vector(y_vec, y)
+    #     vec_3 = normalize_vector(add_vectors(x_vec, y_vec))
         
-        mesh.set_face_attribute(fkey, name=vector_tag, value=vec_3)
+    #     mesh.set_face_attribute(fkey, name=vector_tag, value=vec_3)
 
     # ==========================================================================
     # Create PS vector lines
@@ -238,14 +232,13 @@ if __name__ == '__main__':
     # ==========================================================================
 
     faces = make_faces(str_mesh, vector_tag, weight=False)
-    clusters = furthest_init(NUM, faces, callback=None)
+    clusters = furthest_init(NUM, faces, callback=callback)
     
     sel_clusters = clusters[-1]
-    all_clusters = k_means(sel_clusters, faces, ITERS, MERGESPLIT, callback=None)
+    all_clusters = k_means(sel_clusters, faces, ITERS, MERGESPLIT, callback=callback)
 
     final_clusters = all_clusters[-1]
 
-    callback(1, clusters=final_clusters)
     # ==========================================================================
     # Visualization
     # ==========================================================================
