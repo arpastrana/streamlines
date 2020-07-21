@@ -355,7 +355,7 @@ class Streamsystem:
             self.get_growth_direction(nd, count, direction)
 
             # 2. get threshold distances
-            max_dist = self.get_threshold_distance(nd)
+            # max_dist = self.get_threshold_distance(nd)
 
             # 3. check for proximity to other streamlines
             # if check_proximity is True:

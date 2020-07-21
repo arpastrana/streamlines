@@ -72,7 +72,7 @@ smooth_iters = 0
 # ==========================================================================
 
 mesh = Mesh()
-mesh.load(HERE)
+mesh.from_json(HERE)
 mesh_unify_cycles(mesh)
 
 # ==========================================================================
@@ -224,19 +224,19 @@ for fkey, centroid in centroids.items():
 # Scipy Spectral Clustering - doesn't work
 # ==========================================================================
 
-n_clusters = 7
+# n_clusters = 7
 
-print('spectral clustering...')
-clustering = SpectralClustering(n_clusters=n_clusters, affinity="nearest_neighbors")
-print('fitting...')
-clustering.fit(X)
-print('fit')
+# print('spectral clustering...')
+# clustering = SpectralClustering(n_clusters=n_clusters, affinity="nearest_neighbors")
+# print('fitting...')
+# clustering.fit(X)
+# print('fit')
 
-labels = clustering.labels_
+# labels = clustering.labels_
 
-print('coloring...')
-colors = {idx: i_to_rgb(label / (n_clusters - 1)) for idx, label in enumerate(labels)}
-print('colored')
+# print('coloring...')
+# colors = {idx: i_to_rgb(label / (n_clusters - 1)) for idx, label in enumerate(labels)}
+# print('colored')
 
 # fig = plt.figure()
 # ax = fig.add_subplot(111, projection='3d')
