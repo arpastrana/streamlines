@@ -25,6 +25,7 @@ from compas.datastructures import Mesh
 from compas.geometry import Point
 from compas.geometry import Line
 from compas.topology import dijkstra_distances
+from compas.utilities import geometric_key
 
 
 TOL = 1e-6
@@ -50,15 +51,19 @@ class Node(Boid):
         self.point_left = None
 
     def pull_to_mesh(self, s_mesh, name):
-        self.pos, self.f_id = s_mesh.closest_point(self.pos)
-        self.update_pos(self.pos)
+        # self.pos, self.f_id = s_mesh.closest_point(self.pos)
+        d, xyz, i = cg.closest_point_in_cloud(self.pos, s_mesh.face_centroids)
+        self.f_id = s_mesh.gkey_fkey[geometric_key(xyz)]
+
+        # self.update_pos(self.pos)
         edge = self.pull_to_edge(s_mesh, self.f_id)
 
         if edge is not None:
             self.edge = edge
             self.is_intersection = True
 
-        self.vel = s_mesh.get_vector_on_face(self.pos, self.f_id, name)
+        # self.vel = s_mesh.get_vector_on_face(self.pos, self.f_id, name)
+        self.vel = s_mesh.c_mesh.face_attribute(key=self.f_id, name=name)
 
     def update_pos(self, point):
         try:

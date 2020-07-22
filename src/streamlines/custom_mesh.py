@@ -30,6 +30,8 @@ from compas.geometry import distance_point_point
 
 from compas.topology import dijkstra_distances
 
+from compas.utilities import geometric_key
+
 from functools import reduce
 
 try:
@@ -88,7 +90,7 @@ def barycentric_to_cartesian(barycentric, triangle):
 
 class StructuralMesh():
 
-    def __init__(self, cmesh, unify=False):
+    def __init__(self, cmesh):
         # self.c_mesh = helpers.mesh.mesh_from_guid(Mesh, gh_mesh)
         # self.gh_mesh = gh_mesh
         self.c_mesh = cmesh
@@ -98,11 +100,15 @@ class StructuralMesh():
         self.e_weights = None
         self.avg_edge = None
 
-        if unify:
-            compas.topology.mesh_unify_cycles(self.c_mesh, root=None)
+        self.face_centroids = [self.c_mesh.face_centroid(f) for f in self.c_mesh.faces()]
+        self.gkey_fkey = {geometric_key(self.c_mesh.face_centroid(f)): f for f in self.c_mesh.faces()} 
+        
+        self.boundary_vertices = self.c_mesh.vertices_on_boundary(True)
+        self.boundary_polygon = [self.c_mesh.vertex_coordinates(v) for v in self.boundary_vertices]
+
 
         self.set_face_planes()
-        # self.set_edge_planes()
+        self.set_edge_planes()
         # self.set_adjacency()
         # self.set_avg_edge_length()
 
@@ -121,41 +127,43 @@ class StructuralMesh():
     def set_dijkstra_distances(self):
         for v in self.c_mesh.vertices():
             dijkstra_d = dijkstra_distances(self.adj, self.e_weights, v)
-            self.c_mesh.set_vertex_attribute(v, 'dijkstra', dijkstra_d)
+            self.c_mesh.vertex_attribute(v, 'dijkstra', dijkstra_d)
 
-    def set_face_vectors(self, vectorField, name, normalize=True):
+    def set_face_vectors(self, vector_field, name, normalize=True):
         for f_key in self.c_mesh.faces():
 
-            vector_a = vectorField[int(f_key)]
+            vector_a = vector_field[int(f_key)]
             if normalize is True:
                 vector_a = cg.normalize_vector(vector_a)  # normalize or not?
             vector_b = cg.scale_vector(vector_a, -1.)
-            self.c_mesh.set_face_attribute(f_key, str(name) + '_a', vector_a)
-            self.c_mesh.set_face_attribute(f_key, str(name) + '_b', vector_b)
+            self.c_mesh.face_attribute(f_key, str(name) + '_a', vector_a)
+            self.c_mesh.face_attribute(f_key, str(name) + '_b', vector_b)
 
     def set_face_planes(self):
         for f_key in self.c_mesh.faces():
             ct = self.c_mesh.face_centroid(f_key)
             normal = self.c_mesh.face_normal(f_key)
-            self.c_mesh.set_face_attribute(f_key, 'plane', [ct, normal])
+            self.c_mesh.face_attribute(f_key, 'plane', [ct, normal])
 
     def set_edge_planes(self):
-        for u, v in self.c_mesh.edges(data=False):
+        for u, v in self.c_mesh.edges():
 
-            f_keys = self.c_mesh.edge_faces(u, v)
-            f_keys = [f_key for f_key in f_keys if f_key is not None]
+            # f_keys = self.c_mesh.edge_faces(u, v)
+            # f_keys = [f_key for f_key in f_keys if f_key is not None]
 
-            normals = [self.c_mesh.face_normal(f_key) for f_key in f_keys]
-            normals = list(map(lambda x: ut.align_vector(x, normals[0]),
-                               normals
-                               )
-                           )
+            # normals = [self.c_mesh.face_normal(f_key) for f_key in f_keys]
+            # normals = list(map(lambda x: ut.align_vector(x, normals[0]),
+            #                    normals
+            #                    )
+            #                )
 
-            vec = reduce(lambda x, y: cg.add_vectors(x, y), normals)
+            # vec = reduce(lambda x, y: cg.add_vectors(x, y), normals)
 
+            vec = [0.0, 0.0, 1.0]
             vec = cg.cross_vectors(self.c_mesh.edge_vector(u, v), vec)
             plane = [self.c_mesh.edge_midpoint(u, v), vec]
-            self.c_mesh.set_edge_attribute((u, v), 'plane', plane)
+
+            self.c_mesh.edge_attribute(key=(u, v), name='plane', value=plane)
 
     def set_vertex_vectors(self, name):
         for v in self.c_mesh.vertices():
@@ -163,10 +171,10 @@ class StructuralMesh():
             face_idxs = self.c_mesh.vertex_faces(v, ordered=True)
 
             # 2. get attributes of the found faces and calculate weights
-            vec_a = self.c_mesh.get_faces_attribute(name=str(name) + '_a',
+            vec_a = self.c_mesh.faces_attribute(name=str(name) + '_a',
                                                    keys=face_idxs
                                                    )
-            vec_b = self.c_mesh.get_faces_attribute(name=str(name) + '_b',
+            vec_b = self.c_mesh.faces_attribute(name=str(name) + '_b',
                                                    keys=face_idxs
                                                    )
 
@@ -181,8 +189,8 @@ class StructuralMesh():
             nd_vec_b = ut.vectors_weight_reduce(vec_b, weights)
 
             # 6. assign vector attributes to vertices
-            self.c_mesh.set_vertex_attribute(v, str(name) + '_a', nd_vec_a)
-            self.c_mesh.set_vertex_attribute(v, str(name) + '_b', nd_vec_b)
+            self.c_mesh.vertex_attribute(v, str(name) + '_a', nd_vec_a)
+            self.c_mesh.vertex_attribute(v, str(name) + '_b', nd_vec_b)
 
     def set_vertex_vectors_angles(self, name):
         for v in self.c_mesh.vertices():
@@ -190,10 +198,10 @@ class StructuralMesh():
             face_idxs = self.c_mesh.vertex_faces(v, ordered=True)
 
             # 2. get attributes of the found faces and calculate weights
-            vec_a = self.c_mesh.get_faces_attribute(name=str(name) + '_a',
+            vec_a = self.c_mesh.faces_attribute(name=str(name) + '_a',
                                                    keys=face_idxs
                                                    )
-            vec_b = self.c_mesh.get_faces_attribute(name=str(name) + '_b',
+            vec_b = self.c_mesh.faces_attribute(name=str(name) + '_b',
                                                    keys=face_idxs
                                                    )
 
@@ -218,15 +226,15 @@ class StructuralMesh():
             nd_vec_b = ut.vectors_weight_reduce(vec_b, weights)
 
             # 6. assign vector attributes to vertices
-            self.c_mesh.set_vertex_attribute(v, str(name) + '_a', nd_vec_a)
-            self.c_mesh.set_vertex_attribute(v, str(name) + '_b', nd_vec_b)
+            self.c_mesh.vertex_attribute(v, str(name) + '_a', nd_vec_a)
+            self.c_mesh.vertex_attribute(v, str(name) + '_b', nd_vec_b)
 
-    def get_vector_on_face(self, point, f_key, name, vec=[0, 0, 0]):
+    def get_vector_on_face_vertices(self, point, f_key, name, vec=[0, 0, 0]):
         v_keys = self.c_mesh.face_vertices(f_key)
-        v_vectors_a = self.c_mesh.get_vertices_attribute(str(name) + '_a',
+        v_vectors_a = self.c_mesh.vertices_attribute(name=str(name) + '_a',
                                                         keys=v_keys
                                                         )
-        v_vectors_b = self.c_mesh.get_vertices_attribute(str(name) + '_b',
+        v_vectors_b = self.c_mesh.vertices_attribute(name=str(name) + '_b',
                                                         keys=v_keys
                                                         )
 
@@ -250,10 +258,10 @@ class StructuralMesh():
             v_keys.extend(self.c_mesh.face_vertices(f_key))
 
         v_keys = list(set(v_keys))
-        v_vectors_a = self.c_mesh.get_vertices_attribute(str(name) + '_a',
+        v_vectors_a = self.c_mesh.vertices_attribute(name=str(name) + '_a',
                                                         keys=v_keys
                                                         )
-        v_vectors_b = self.c_mesh.get_vertices_attribute(str(name) + '_b',
+        v_vectors_b = self.c_mesh.vertices_attribute(name=str(name) + '_b',
                                                         keys=v_keys
                                                         )
 
@@ -277,10 +285,10 @@ class StructuralMesh():
         f_keys.extend(self.c_mesh.face_neighbors(f_key))
         f_keys = list(set(f_keys))
 
-        f_vectors_a = self.c_mesh.get_faces_attribute(f_keys,
+        f_vectors_a = self.c_mesh.faces_attribute(f_keys,
                                                       str(name) + '_a'
                                                       )
-        f_vectors_b = self.c_mesh.get_faces_attribute(f_keys,
+        f_vectors_b = self.c_mesh.faces_attribute(f_keys,
                                                       str(name) + '_b',
                                                       )
         f_vectors = ut.filter_aligned_vectors(vec, f_vectors_a, f_vectors_b)
@@ -301,7 +309,7 @@ class StructuralMesh():
 
         for v in self.c_mesh.vertices():
             faces = self.c_mesh.vertex_faces(v)
-            f_data = self.c_mesh.get_faces_attribute(name=data_tag, keys=faces)
+            f_data = self.c_mesh.faces_attribute(name=data_tag, keys=faces)
 
             if mode == 'max':
                 val = max(f_data)
@@ -317,9 +325,10 @@ class StructuralMesh():
         return n_data
 
     def get_edge_labels(self, name, tol):
-        for index, (u, v, attr) in enumerate(self.c_mesh.edges(True)):
-            vec_u_a = self.c_mesh.get_vertex_attribute(u, str(name) + '_a')
-            vec_v_a = self.c_mesh.get_vertex_attribute(v, str(name) + '_a')
+
+        for u, v in self.c_mesh.edges():
+            vec_u_a = self.c_mesh.vertex_attribute(u, str(name) + '_a')
+            vec_v_a = self.c_mesh.vertex_attribute(v, str(name) + '_a')
 
             dot = cg.dot_vectors(vec_u_a, vec_v_a)
 
@@ -330,7 +339,7 @@ class StructuralMesh():
             else:
                 label = 0
 
-            self.c_mesh.set_edge_attribute((u, v), 'label', label)
+            self.c_mesh.edge_attribute(key=(u, v), name='label', value=label)
 
     def get_face_labels(self, name, tol=0.6):
         self.get_edge_labels(name, tol)
@@ -338,8 +347,8 @@ class StructuralMesh():
         for f_key in self.c_mesh.faces():
             valency = 1
             for edge in self.c_mesh.face_halfedges(f_key):
-                valency *= self.c_mesh.get_edge_attribute(edge, 'label')
-            self.c_mesh.set_face_attribute(f_key, 'label', valency)
+                valency *= self.c_mesh.edge_attribute(key=edge, name='label')
+            self.c_mesh.face_attribute(f_key, 'label', valency)
 
     def find_vector_on_face(self, point, f_key, name):
         v_keys = self.c_mesh.face_vertices(f_key)
@@ -372,7 +381,7 @@ class StructuralMesh():
         l_pos = []
 
         for f_key in self.c_mesh.faces():
-            label = self.c_mesh.get_face_attribute(f_key, 'label')
+            label = self.c_mesh.face_attribute(f_key, 'label')
 
             if label == -1:
                 l_neg.append(self.c_mesh.face_centroid(f_key))
@@ -387,16 +396,16 @@ class StructuralMesh():
 
         return l_neg, l_null, l_pos
 
-    def closest_point(self, point, maxdist=None):
-        maxdist = maxdist
-        # point, face = rs.MeshClosestPoint(self.gh_mesh,
-        #                                   rs.AddPoint(*point),
-        #                                   maxdist
-        #                                   )
-        point, face, dist = self.trimesh_closest_point_xy(self.c_mesh, point)
+    # def closest_point(self, point, maxdist=None):
+    #     maxdist = maxdist
+    #     # point, face = rs.MeshClosestPoint(self.gh_mesh,
+    #     #                                   rs.AddPoint(*point),
+    #     #                                   maxdist
+    #     #                                   )
+    #     point, face, dist = self.trimesh_closest_point_xy(self.c_mesh, point)
 
-        # point = [point.X, point.Y, point.Z]
-        return point, face
+    #     # point = [point.X, point.Y, point.Z]
+    #     return point, face
 
     @staticmethod
     def trimesh_closest_point_xy(mesh, point):
