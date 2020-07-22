@@ -1,34 +1,20 @@
-import heapq
+import numpy as np
 
+from random import seed
+from random import choice
 
-# from compas.geometry import constrained_delaunay_triangle
 from compas.geometry import scale_vector
 from compas.geometry import add_vectors
 from compas.geometry import normalize_vector
 from compas.geometry import length_vector
 from compas.geometry import closest_point_on_plane
 from compas.geometry import distance_point_point
+from compas.geometry import cross_vectors
 
 from compas.geometry import is_point_in_triangle
 from compas.geometry import is_point_in_triangle_xy
 
-
-HERE = '/Users/arpj/code/libraries/streamlines/examples/four_point_slab.json'
-
-tags = [
-    'n_1',
-    'n_2',
-    'm_1',
-    'm_2',
-    'ps_1_top',
-    'ps_1_bot',
-    'ps_1_mid',
-    'ps_2_top',
-    'ps_2_bot',
-    'ps_2_mid',
-    'custom_1',
-    'custom_2'
-]
+from compas.utilities import flatten
 
 
 def vector_lines_on_faces(mesh, vector_tag, uniform=True, factor=0.02):
@@ -149,24 +135,39 @@ if __name__ == '__main__':
     from streamlines.streamsystem import Streamsystem
     from streamlines.custom_mesh import StructuralMesh
 
+
+    HERE = '/Users/arpj/code/princeton/directional_clustering/data/json_files/four_point_slab.json'
+    
+    # HERE = '/Users/arpj/code/princeton/directional_clustering/data/json_files/two_point_wall_res_005.json'
+
+    # HERE = '/Users/arpj/code/princeton/directional_clustering/data/json_files/two_point_wall_res_005_k_5.json'
+
+    tags = [
+        'n_1',
+        'n_2',
+        'm_1',
+        'm_2',
+        'ps_1_top',
+        'ps_1_bot',
+        'ps_1_mid',
+        'ps_2_top',
+        'ps_2_bot',
+        'ps_2_mid',
+        'custom_1',
+        'custom_2'
+    ]
+
+
+    vector_tag = 'n_1' # for walls    
+    vector_tag = 'm_1'  # for slabs
+
     # ==========================================================================
     # Import mesh
     # ==========================================================================
 
     mesh = Mesh()
-    # mesh.load(HERE)
     mesh = Mesh.from_json(HERE)
     mesh_unify_cycles(mesh)
-
-    # ==========================================================================
-    # Create PS vector lines
-    # ==========================================================================
-    
-    vector_tag = 'ps_1_top'
-    lines = vector_lines_on_faces(mesh, vector_tag, True, factor=0.05)
-    lines = [line for line in map(line_tuple_to_dict, lines)]
-    for line in lines:
-        line['width'] = 0.60
     
     # ==========================================================================
     # Instantiate StructuralMesh()
@@ -174,45 +175,75 @@ if __name__ == '__main__':
     
     str_mesh = StructuralMesh(mesh)
 
-    for tag in tags:
-        vector_field = mesh.get_faces_attribute(keys=list(mesh.faces()), name=tag)
-        str_mesh.set_face_vectors(vector_field, tag, normalize=True)
-        str_mesh.set_vertex_vectors_angles(tag)
-
-    # str_mesh.get_edge_labels(vector_tag, 0.01)
-    str_mesh.get_face_labels(vector_tag, 0.0)
-    umbilic_keys = list(str_mesh.c_mesh.faces_where_predicate(lambda f_key, attr: attr['label'] != 1))
-    not_umbilic_keys = list(str_mesh.c_mesh.faces_where_predicate(lambda f_key, attr: attr['label'] == 1))
-    umbilics = [str_mesh.c_mesh.face_centroid(fkey) for fkey in umbilic_keys]
-
     # ==========================================================================
     # Create closest-point seeds
     # ==========================================================================
     
     test_pt = [3.0, 2.5, 0.5]
+    test_pt = [0.5, 0.5, 0.0]
     output = trimesh_closest_point_xy(mesh, test_pt)
     closest_pt, fkey, dist = output
-    # seeds = [closest_pt]
-    seeds = list(umbilics)
-    # seeds = [mesh.vertex_coordinates(vkey) for vkey in mesh.vertices()]
 
+    seed(0)
+
+    seeds = [closest_pt]
+
+    # ==========================================================================
+    # Create linear space grid
+    # ==========================================================================
+
+    num_x = 8
+    num_y = 8
+
+    P = np.array([mesh.vertex_coordinates(v) for v in mesh.vertices()])
+    
+    max_x = np.amax(P[:, 0])
+    min_x = np.amin(P[:, 0])
+    max_y = np.amax(P[:, 1])
+    min_y = np.amin(P[:, 1])
+
+    P = np.zeros((num_x, num_y, 3))
+    
+    x_space = np.linspace(min_x, max_x, num_x).reshape((-1, 1))
+    y_space = np.linspace(min_y, max_y, num_y).reshape((1, -1))
+
+    P[:, :, 0] = x_space
+    P[:, :, 1] = y_space
+
+    seeds = list(flatten(P.tolist()))
+    seed_points = seeds[:]
+
+    # ==========================================================================
+    # Other seeds
+    # ==========================================================================
+
+    # seeds = [mesh.vertex_coordinates(500)]
+    # seeds = [choice(str_mesh.face_centroids) for i in range(10)]
+    # seeds = str_mesh.boundary_polygon[:]
+
+    # ==========================================================================
+    # Second field seeds
+    # ==========================================================================
+
+    seeds_2 = seeds[:]
+    
     # ==========================================================================
     # Set up Streamsystem()
     # ==========================================================================
     
-    streamsystem = Streamsystem(str_mesh, 'dummy', dL=0.05, min_sp=0.20, uni_sp=True)
-    streamsystem.set_tracing_data(vector_tag, [0, 0, 0], min_length=0.20)
+    streamsystem = Streamsystem(str_mesh, dL=0.10, min_sp=0.20, uni_sp=True)
+    streamsystem.set_tracing_data(vector_tag, [0, 0, 0], min_length=0.10)
 
     # ==========================================================================
     # Execute tracing routine
     # ==========================================================================
     
     start_time = time.time()
-    # streamsystem.make_streamlines_mebarki(seeds, o_prox=1.0, st_o_prox=0.5)
+    streamsystem.make_streamlines_mebarki(seeds, o_prox=0.2, st_o_prox=0.2)
     end_time = time.time()
     print('elapsed time: {} seconds'.format(time.time() - start_time))
 
-     # ==========================================================================
+    # ==========================================================================
     # Visualization
     # ==========================================================================
     
@@ -220,25 +251,78 @@ if __name__ == '__main__':
     control_points = []
     for streamline in streamsystem.streamlines:
         polylines.append({'points': streamline.polyline.points,
-                         'color': (0, 0, 255)
-                         }
-                         )
+                         'color': (0, 0, 255)})
 
-        for xyz in streamline.polyline.points:
-            control_points.append({'pos': xyz, 'facecolor': (255, 255, 255), 'radius': 0.03})
+        for idx, xyz in enumerate(streamline.polyline.points):
+            control_points.append({'pos': xyz, 'facecolor': (255, 255, 255), 'radius': 0.0025, 'text': str(idx)})
 
+    # ==========================================================================
+    # Rotate field
+    # ==========================================================================
+
+    for fkey in str_mesh.c_mesh.faces():
+        vector = str_mesh.c_mesh.face_attribute(key=fkey, name=vector_tag)
+        global_z = [0.0, 0.0, 1.0]
+        other_vector = cross_vectors(vector, global_z)
+        o_vector_tag = "x_" + vector_tag
+        str_mesh.c_mesh.face_attribute(key=fkey, name=o_vector_tag, value=other_vector)
+
+    # ==========================================================================
+    # Set up Streamsystem() 2
+    # ==========================================================================
+    
+    streamsystem_2 = Streamsystem(str_mesh, dL=0.10, min_sp=0.20, uni_sp=True)
+    streamsystem_2.set_tracing_data(o_vector_tag, [0, 0, 0], min_length=0.10)
+
+    # ==========================================================================
+    # Execute tracing routine 2
+    # ==========================================================================
+    
+    start_time = time.time()
+    streamsystem_2.make_streamlines_mebarki(seeds_2, o_prox=0.2, st_o_prox=0.2)
+    end_time = time.time()
+    print('elapsed time: {} seconds'.format(time.time() - start_time))
+
+    # ==========================================================================
+    # Visualization 2
+    # ==========================================================================
+    
+    polylines_2 = []
+    for streamline in streamsystem_2.streamlines:
+        polylines_2.append({'points': streamline.polyline.points,
+                         'color': (255, 0, 0)})
+
+    # ==========================================================================
+    # Create PS vector lines
+    # ==========================================================================
+    
+    lines = vector_lines_on_faces(mesh, vector_tag, True, factor=0.02)
+    lines = [line for line in map(line_tuple_to_dict, lines)]
+    for line in lines:
+        line['width'] = 0.50
+
+    # ==========================================================================
+    # Visualization
+    # ==========================================================================
+    
+    points = []
+
+    for pt in seed_points:
+        points.append({"pos": pt, "radius": 0.05, "facecolor": (255, 255, 255)})
+
+    # ==========================================================================
+    # Visualization
+    # ==========================================================================
 
     plotter = MeshPlotter(mesh, figsize=(12,9))
-    plotter.draw_faces(keys=umbilic_keys, facecolor=(255, 0, 0))
-    # plotter.draw_edges(color=(10, 10, 10))
-    # plotter.draw_faces(keys=not_umbilic_keys)
-    plotter.draw_lines(lines)
-    # plotter.draw_points([{'pos': closest_pt, 'facecolor': (0, 255, 0), 'radius': 0.02},
-    # 					{'pos': test_pt, 'facecolor': (0, 0, 255), 'radius': 0.02}
-    # 					]
-    # 					)
 
-    # plotter.draw_points(control_points)
+    # plotter.draw_edges(color=(10, 10, 10))
+    plotter.draw_faces()
+    # plotter.draw_lines(lines)
+
+    # plotter.draw_points(points)
+
     plotter.draw_polylines(polylines)
+    plotter.draw_polylines(polylines_2)
 
     plotter.show()
