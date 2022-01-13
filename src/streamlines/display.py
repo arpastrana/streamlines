@@ -79,12 +79,12 @@ class Display():
 
     def draw_face_vectors(self, s_mesh, name, scale=0.02):
         cts = [s_mesh.c_mesh.face_centroid(f) for f in s_mesh.c_mesh.faces()]
-        vectors_a = s_mesh.c_mesh.get_faces_attribute(s_mesh.c_mesh.faces(), str(name) + '_a')
-        vectors_b = s_mesh.c_mesh.get_faces_attribute(s_mesh.c_mesh.faces(), str(name) + '_b')
+        vectors_a = s_mesh.c_mesh.faces_attribute(keys=list(s_mesh.c_mesh.faces()), name=str(name) + '_a')
+        vectors_b = s_mesh.c_mesh.faces_attribute(keys=list(s_mesh.c_mesh.faces()), name=str(name) + '_b')
         return self.draw_vectors(cts, zip(vectors_a, vectors_b), scale)
 
     def draw_node_vectors(self, s_mesh, name, scale=0.02):
         vts = [s_mesh.c_mesh.vertex_coordinates(v) for v in s_mesh.c_mesh.vertices()]
-        vectors_a = s_mesh.c_mesh.get_vertices_attribute(str(name) + '_a')
-        vectors_b = s_mesh.c_mesh.get_vertices_attribute(str(name) + '_b')
+        vectors_a = s_mesh.c_mesh.vertices_attribute(name=str(name) + '_a')
+        vectors_b = s_mesh.c_mesh.vertices_attribute(name=str(name) + '_b')
         return self.draw_vectors(vts, zip(vectors_a, vectors_b), scale)

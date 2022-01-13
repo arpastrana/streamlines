@@ -384,9 +384,8 @@ class Streamsystem:
             # else:
             #     vec = self.s_mesh.get_vector_on_face(nd.pos, nd.f_id, vtag, nd.vel)
             #     vec = ut.align_vector(cg.normalize_vector(vec), nd.vel)
-            
-            # vec = self.s_mesh.get_vector_on_face(nd.pos, nd.f_id, vtag, nd.vel)
-            d, xyz, i = cg.closest_point_in_cloud(nd.pos, self.s_mesh.face_centroids)
+
+            xyz, i, dist = self.s_mesh.face_tree.nearest_neighbor(nd.pos)
             nd.f_id = self.s_mesh.gkey_fkey[geometric_key(xyz)]
 
             vec = self.s_mesh.c_mesh.face_attribute(key=nd.f_id, name=vtag)
@@ -395,7 +394,6 @@ class Streamsystem:
             new_pos = cg.translate_points([nd.pos], vec)[0]
 
             # check if inside of boundary
-
             boundary = self.s_mesh.boundary_polygon
             is_inside = cg.is_point_in_polygon_xy(new_pos, boundary)
             is_at_boundary = cg.is_point_on_polyline(new_pos, boundary, 1e-6)
