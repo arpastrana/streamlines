@@ -164,7 +164,7 @@ class StructuralMesh():
             vec = cg.cross_vectors(self.c_mesh.edge_vector(u, v), vec)
             plane = [self.c_mesh.edge_midpoint(u, v), vec]
 
-            self.c_mesh.edge_attribute(key=(u, v), name='plane', value=plane)
+            self.c_mesh.edge_attribute(edge=(u, v), name='plane', value=plane)
 
     def set_vertex_vectors(self, name):
         for v in self.c_mesh.vertices():
@@ -172,18 +172,12 @@ class StructuralMesh():
             face_idxs = self.c_mesh.vertex_faces(v, ordered=True)
 
             # 2. get attributes of the found faces and calculate weights
-            vec_a = self.c_mesh.faces_attribute(name=str(name) + '_a',
-                                                   keys=face_idxs
-                                                   )
-            vec_b = self.c_mesh.faces_attribute(name=str(name) + '_b',
-                                                   keys=face_idxs
-                                                   )
+            vec_a = self.c_mesh.faces_attribute(name=str(name) + '_a', keys=face_idxs)
+            vec_b = self.c_mesh.faces_attribute(name=str(name) + '_b', keys=face_idxs)
 
             # 3. calculate weights
             pt_cloud = [self.c_mesh.face_centroid(k) for k in face_idxs]
-            weights = ut.get_dist_weights(self.c_mesh.vertex_coordinates(v),
-                                          pt_cloud
-                                          )
+            weights = ut.get_dist_weights(self.c_mesh.vertex_coordinates(v), pt_cloud)
 
             # 4. multiply vectors by weights
             nd_vec_a = ut.vectors_weight_reduce(vec_a, weights)
@@ -199,12 +193,8 @@ class StructuralMesh():
             face_idxs = self.c_mesh.vertex_faces(v, ordered=True)
 
             # 2. get attributes of the found faces and calculate weights
-            vec_a = self.c_mesh.faces_attribute(name=str(name) + '_a',
-                                                   keys=face_idxs
-                                                   )
-            vec_b = self.c_mesh.faces_attribute(name=str(name) + '_b',
-                                                   keys=face_idxs
-                                                   )
+            vec_a = self.c_mesh.faces_attribute(name=str(name) + '_a', keys=face_idxs)
+            vec_b = self.c_mesh.faces_attribute(name=str(name) + '_b', keys=face_idxs)
 
             # 3. get connected edges
             angles = []
@@ -340,7 +330,7 @@ class StructuralMesh():
             else:
                 label = 0
 
-            self.c_mesh.edge_attribute(key=(u, v), name='label', value=label)
+            self.c_mesh.edge_attribute(edge=(u, v), name='label', value=label)
 
     def get_face_labels(self, name, tol=0.6):
         self.get_edge_labels(name, tol)
@@ -348,7 +338,7 @@ class StructuralMesh():
         for f_key in self.c_mesh.faces():
             valency = 1
             for edge in self.c_mesh.face_halfedges(f_key):
-                valency *= self.c_mesh.edge_attribute(key=edge, name='label')
+                valency *= self.c_mesh.edge_attribute(edge=edge, name='label')
             self.c_mesh.face_attribute(f_key, 'label', valency)
 
     def find_vector_on_face(self, point, f_key, name):
