@@ -119,23 +119,25 @@ class Streamsystem:
         return strm
 
     def make_streamlines_mebarki(self, seeds, o_prox, st_o_prox):
-        while len(seeds) > 0:
+        for seed in seeds:
+        # while len(seeds) > 0:
             print('******* new streamline started *********')
             # self.update_search_tree()
-            pt_seed = seeds.pop(0)
-            streamline = self.get_new_streamline(pt_seed, o_prox=o_prox, st_o_prox=st_o_prox)
+            # pt_seed = seeds.pop(0)
+            streamline = self.get_new_streamline(seed, o_prox=o_prox, st_o_prox=st_o_prox)
             print('streamline was {}'.format(streamline))
 
-    def make_streamlines_jobard(self, strat_f, o_prox, st_o_prox, s_prox, num_samples, ite, start_pt=None):
+    def make_streamlines_jobard(self, min_sp, o_prox, st_o_prox, s_prox, num_samples, iters, start_pt=None, heap=True):
         '''
         '''
-
         # 1. create queue list with streamlines. store them as they appear
         queue = []
-        heapq.heapify(queue)
+
+        if heap:
+            heapq.heapify(queue)
 
         # 2. find the most stressed point on the design space faces
-        min_sp = self.get_max_face_spacing() * strat_f
+        min_sp = min_sp or self.get_max_face_spacing()
 
         # 2-b. filter first point
         if not start_pt:
@@ -143,7 +145,8 @@ class Streamsystem:
         start_nd = self.make_new_node(start_pt)
 
         # 2-c. make first point attribute
-        self.first_pt = rs.AddPoint(*start_nd.pos)
+        # self.first_pt = rs.AddPoint(*start_nd.pos)
+        self.first_pt = start_nd.pos
 
         # 3. make first streamline
         strm = self.make_streamline(start_nd)
@@ -152,20 +155,30 @@ class Streamsystem:
 
         # 4. append first streamline to the queue
         print('******* initial streamline created *********')
-        heapq.heappush(queue, (0, strm))
+        if queue:
+            heapq.heappush(queue, (0, strm))
+        else:
+            queue.append((0, strm))
 
         count = 0
         node_count = 0
 
         # 5. pop streamline-i from queue
-        for i in range(ite):
+        for i in range(iters):
             if len(queue) > 0:
                 print('******* new streamline popped *********')
-                as_, cu_strm = heapq.heappop(queue)
+                if heap:
+                    _, cu_strm = heapq.heappop(queue)
+                else:
+                    _, cu_strm = queue.pop()
+
                 count += 1
 
             # 6. sample points on the streamline-i at min spacing OK
-                s_ = self.make_sampling_nodes(cu_strm, min_sp)
+                if self.uni_sp:
+                    s_ = self.make_sampling_nodes(cu_strm, min_sp, min_sp, False, uni_sp=self.uni_sp)
+                else:
+                    s_ = self.make_sampling_nodes(cu_strm, min_sp, length=0.2)
 
                 # 8. select node and offset to the right and left
                 # while len(s_) > 0:
@@ -173,18 +186,19 @@ class Streamsystem:
                     # while len(s_) > 0:
                     for i in range(num_samples):
                         if len(s_) > 0:
-                            cu_sep, cu_nd = heapq.heappop(s_)
-                            node_count += 1
+                            if heap:
+                                cu_sep, cu_nd = heapq.heappop(s_)
+                            else:
+                                cu_sep, cu_nd = s_.pop()
 
-                            if self.uni_sp is True:
-                                cu_sep = self.min_sp
+                            node_count += 1
 
                             if count == 1:
                                 cu_sep = cu_sep / 2
 
                         # 9. make points with particle tracing
-                            pt_right = self.get_offset_point(cu_nd, cu_sep)
-                            pt_left = self.get_offset_point(cu_nd, cu_sep, True)
+                            pt_right = self.get_offset_point_xy(cu_nd, cu_sep)
+                            pt_left = self.get_offset_point_xy(cu_nd, cu_sep, True)
 
                         # 10. make streamline-j. append to queue
                             for pt_ in [pt_right, pt_left]:
@@ -192,14 +206,13 @@ class Streamsystem:
                                 if pt_ is not None:
                                     print('******* new streamline starts *********')
                                     # self.update_search_tree()
-                                    new_streamline = self.get_new_streamline(pt_,
-                                                                             o_prox,
-                                                                             st_o_prox,
-                                                                             s_prox,
-                                                                             )
+                                    new_streamline = self.get_new_streamline(pt_, o_prox, st_o_prox, s_prox)
                                 if new_streamline is not None:
                                     # heapq.heappush(queue, (count, new_streamline))
-                                    heapq.heappush(queue, (cu_sep, new_streamline))
+                                    if heap:
+                                        heapq.heappush(queue, (cu_sep, new_streamline))
+                                    else:
+                                        queue.append((cu_sep, new_streamline))
 
         print('Number of Processed Nodes was: {}'.format(node_count))
 
@@ -642,33 +655,41 @@ class Streamsystem:
 
         return new_node
 
-    def make_sampling_nodes(self, strm, threshold_sp, length=0.2, heap=True):
+    def make_sampling_nodes(self, strm, min_sp, length=0.2, heap=True, uni_sp=False):
         # samp_pts, samp_vels = strm.resample_polyline(length)
-        samp_pts, samp_vels = strm.resample_curve(length)
+        # samp_pts, samp_vels = strm.resample_curve(length)
+        samp_pts, samp_vels = strm.resample_curve_compas(length)
 
         if samp_pts is not None:
             sampling = []
+
             if heap is True:
                 heapq.heapify(sampling)
 
             for idx, point in enumerate(samp_pts):
-                s_nd = self.make_new_node(point, samp_vels[idx])
-                s = self.s_mesh.c_mesh.face_attribute(key=s_nd.f_id, name=self.s_tag)
 
-                if s <= threshold_sp:
+                s_nd = self.make_new_node(point, samp_vels[idx])
+
+                if uni_sp:
+                    sampling.append((min_sp, s_nd))
+                    continue
+
+                s = self.s_mesh.c_mesh.face_attribute(key=s_nd.f_id, name=self.s_tag)
+                if s <= min_sp:
                     if heap is True:
                         heapq.heappush(sampling, (s, s_nd))
                     else:
                         sampling.append((s, s_nd))
                 else:
                     print('spacing is {}'.format(s))
-                    print('threshold is {}'.format(threshold_sp))
+                    print('threshold is {}'.format(min_sp))
                     print('spacing larger than given threshold')
             return sampling
         return None
 
     def get_offset_vector(self, node):
-        self.seed_pts.append(rs.AddPoint(*node.pos))
+        # self.seed_pts.append(rs.AddPoint(*node.pos))
+        self.seed_pts.append(node.pos)
         normal = self.s_mesh.c_mesh.face_normal(node.f_id)
         return cg.normalize_vector(cg.cross_vectors(node.vel, normal))
 
@@ -692,6 +713,16 @@ class Streamsystem:
 
         if offset_streamline.polyline is not None:
             self.offsets.append(offset_streamline)
+        return offset_point
+
+    def get_offset_point_xy(self, node, offset, reverse=False):
+        # print('offset distance is {}'.format(offset))
+        offset_vector = self.get_offset_vector(node)
+        if reverse is True:
+            offset_vector = cg.scale_vector(offset_vector, -1.0)
+
+        offset_point = cg.add_vectors(node.pos, cg.scale_vector(offset_vector, offset))
+
         return offset_point
 
     def get_max_face_centroid(self):

@@ -142,7 +142,6 @@ class Streamline():
                 print('it is a line!')
                 new_pts = [rs.CurveStartPoint(crv), rs.CurveEndPoint(crv)]
                 new_par = [0.0, rs.CurveLength(crv)]
-                print(segs)
 
             out_pts = []
             out_vec = []
@@ -160,6 +159,24 @@ class Streamline():
             # print('succesfully resampled')
 
             return out_pts, out_vec
+
+        except Exception:
+            print('Interpolated Curve could not be resampled.')
+            return None, None
+
+    def resample_curve_compas(self, length):
+        try:
+            # rs_poly = rs.AddPolyline(self.polyline.points)
+            polyline = Polyline(self.polyline.points)
+
+            if length <= self.polyline.length:
+                points = polyline.divide_polyline_by_length(length)
+                tangents = [polyline.tangent_at_point_on_polyline(p) for p in points]
+
+                points = [(p.x, p.y, p.z) for p in points]
+                tangents = [(t.x, t.y, t.z) for t in tangents]
+
+                return points, tangents
 
         except Exception:
             print('Interpolated Curve could not be resampled.')
