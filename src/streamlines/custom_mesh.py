@@ -36,7 +36,6 @@ from functools import reduce
 
 try:
     import rhinoscriptsyntax as rs
-    from compas_rhino import helpers
 except:
     if compas.IPY:
         raise
@@ -103,7 +102,9 @@ class StructuralMesh():
         self.face_centroids = [self.c_mesh.face_centroid(f) for f in self.c_mesh.faces()]
         self.gkey_fkey = {geometric_key(self.c_mesh.face_centroid(f)): f for f in self.c_mesh.faces()} 
         
-        self.boundary_vertices = self.c_mesh.vertices_on_boundary(True)
+        self.face_tree = cg.KDTree(self.face_centroids)
+
+        self.boundary_vertices = self.c_mesh.vertices_on_boundary()
         self.boundary_polygon = [self.c_mesh.vertex_coordinates(v) for v in self.boundary_vertices]
 
 
@@ -352,12 +353,8 @@ class StructuralMesh():
 
     def find_vector_on_face(self, point, f_key, name):
         v_keys = self.c_mesh.face_vertices(f_key)
-        vectors_a = self.c_mesh.get_vertices_attribute(str(name) + '_a',
-                                                      keys=v_keys
-                                                      )
-        vectors_b = self.c_mesh.get_vertices_attribute(str(name) + '_b',
-                                                      keys=v_keys
-                                                      )
+        vectors_a = self.c_mesh.vertices_attribute(name=str(name) + '_a', keys=v_keys)
+        vectors_b = self.c_mesh.vertices_attribute(name=str(name) + '_b',keys=v_keys)
 
         weights = ut.get_dist_weights(point,
                                       self.c_mesh.face_coordinates(f_key)

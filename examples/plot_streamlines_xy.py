@@ -136,11 +136,16 @@ if __name__ == '__main__':
     from streamlines.custom_mesh import StructuralMesh
 
 
-    HERE = '/Users/arpj/code/princeton/directional_clustering/data/json_files/four_point_slab.json'
+    # HERE = '/Users/arpj/code/princeton/directional_clustering/data/json_files/four_point_slab.json'
     
     # HERE = '/Users/arpj/code/princeton/directional_clustering/data/json_files/two_point_wall_res_005.json'
 
-    # HERE = '/Users/arpj/code/princeton/directional_clustering/data/json_files/two_point_wall_res_005_k_5.json'
+    # HERE =
+    # '/Users/arpj/code/princeton/directional_clustering/data/json_files/two_point_wall_res_005_k_5.json'
+    
+    # HERE = "/Users/arpj/code/princeton/directional_clustering/data/json_files/square_wall_cantilever_res_005_k_3.json"
+    HERE = "/Users/arpj/code/libraries/directional_clustering/data/json/four_point_slab.json"
+
 
     tags = [
         'n_1',
@@ -158,7 +163,7 @@ if __name__ == '__main__':
     ]
 
 
-    vector_tag = 'n_1' # for walls    
+    # vector_tag = 'n_2_k_3' # for walls
     vector_tag = 'm_1'  # for slabs
 
     # ==========================================================================
@@ -168,17 +173,17 @@ if __name__ == '__main__':
     mesh = Mesh()
     mesh = Mesh.from_json(HERE)
     mesh_unify_cycles(mesh)
-    
+
     # ==========================================================================
     # Instantiate StructuralMesh()
     # ==========================================================================
-    
+
     str_mesh = StructuralMesh(mesh)
 
     # ==========================================================================
     # Create closest-point seeds
     # ==========================================================================
-    
+
     test_pt = [3.0, 2.5, 0.5]
     test_pt = [0.5, 0.5, 0.0]
     output = trimesh_closest_point_xy(mesh, test_pt)
@@ -192,26 +197,26 @@ if __name__ == '__main__':
     # Create linear space grid
     # ==========================================================================
 
-    num_x = 8
-    num_y = 8
+    # num_x = 3  # 8
+    # num_y = 10  # 8
 
-    P = np.array([mesh.vertex_coordinates(v) for v in mesh.vertices()])
-    
-    max_x = np.amax(P[:, 0])
-    min_x = np.amin(P[:, 0])
-    max_y = np.amax(P[:, 1])
-    min_y = np.amin(P[:, 1])
+    # P = np.array([mesh.vertex_coordinates(v) for v in mesh.vertices()])
 
-    P = np.zeros((num_x, num_y, 3))
-    
-    x_space = np.linspace(min_x, max_x, num_x).reshape((-1, 1))
-    y_space = np.linspace(min_y, max_y, num_y).reshape((1, -1))
+    # max_x = np.amax(P[:, 0])
+    # min_x = np.amin(P[:, 0])
+    # max_y = np.amax(P[:, 1])
+    # min_y = np.amin(P[:, 1])
 
-    P[:, :, 0] = x_space
-    P[:, :, 1] = y_space
+    # P = np.zeros((num_x, num_y, 3))
 
-    seeds = list(flatten(P.tolist()))
-    seed_points = seeds[:]
+    # x_space = np.linspace(min_x, max_x, num_x).reshape((-1, 1))
+    # y_space = np.linspace(min_y, max_y, num_y).reshape((1, -1))
+
+    # P[:, :, 0] = x_space
+    # P[:, :, 1] = y_space
+
+    # seeds = list(flatten(P.tolist()))
+    # seed_points = seeds[:]
 
     # ==========================================================================
     # Other seeds
@@ -289,8 +294,7 @@ if __name__ == '__main__':
     
     polylines_2 = []
     for streamline in streamsystem_2.streamlines:
-        polylines_2.append({'points': streamline.polyline.points,
-                         'color': (255, 0, 0)})
+        polylines_2.append({'points': streamline.polyline.points, 'color': (255, 0, 0)})
 
     # ==========================================================================
     # Create PS vector lines
@@ -307,7 +311,7 @@ if __name__ == '__main__':
     
     points = []
 
-    for pt in seed_points:
+    for pt in seeds:
         points.append({"pos": pt, "radius": 0.05, "facecolor": (255, 255, 255)})
 
     # ==========================================================================
@@ -320,7 +324,7 @@ if __name__ == '__main__':
     plotter.draw_faces()
     # plotter.draw_lines(lines)
 
-    # plotter.draw_points(points)
+    plotter.draw_points(points)
 
     plotter.draw_polylines(polylines)
     plotter.draw_polylines(polylines_2)
